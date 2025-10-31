@@ -218,7 +218,7 @@ const InvoiceDetail = () => {
                 <div 
                   key={transaction.id} 
                   className="flex justify-between items-center p-4 bg-muted/50 rounded-lg hover:bg-muted/80 transition-colors cursor-pointer"
-                  onClick={() => navigate(`/transaction/${transaction.id}`)}
+                  onClick={() => navigate(`/transactions/${transaction.id}`)}
                 >
                   <div>
                     <p className="font-semibold">{transaction.keterangan}</p>
