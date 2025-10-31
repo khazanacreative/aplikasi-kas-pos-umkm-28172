@@ -80,22 +80,30 @@ const InvoiceDetail = () => {
 
     if (transactionsData) setTransactions(transactionsData);
 
-    // 🔹 Ambil item dalam invoice
-    const { data: itemsData, error: itemsError } = await supabase
-      .from("pos_transaksi")
-      .select("*")
-      .eq("invoice_id", id)
-      .order("created_at", { ascending: true });
+    // 🔹 Ambil item dalam invoice berdasarkan transaksi yang terkait
+    try {
+      let itemsData: any[] = [];
 
-    if (itemsError) {
-      toast({
-        title: "Error",
-        description: "Gagal memuat item penjualan",
-        variant: "destructive",
-      });
-      console.error("Fetch items error:", itemsError);
-    } else {
-      setItems(itemsData || []);
+      if (transactionsData && transactionsData.length > 0) {
+        const transaksiIds = transactionsData.map((t) => t.id);
+
+        const { data: posData, error: posError } = await supabase
+          .from("pos_transaksi")
+          .select("*")
+          .in("transaksi_id", transaksiIds)
+          .order("created_at", { ascending: true });
+
+        if (posError) {
+          console.error("Fetch pos_transaksi error:", posError);
+        } else {
+          itemsData = posData ?? [];
+        }
+      }
+
+      setItems(itemsData);
+    } catch (err) {
+      console.error("Unexpected error saat fetch item:", err);
+      setItems([]);
     }
 
     setLoadingData(false);
