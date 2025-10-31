@@ -270,6 +270,8 @@ const InvoiceDetail = () => {
           </Card>
         )}
 
+
+
         {transactions.length > 0 && (
           <Card className="p-6 shadow-lg mb-6">
             <h3 className="text-lg font-bold mb-4">Detail Penjualan</h3>
