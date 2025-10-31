@@ -286,8 +286,12 @@ const Invoice = () => {
                 <Card
                   key={invoice.id}
                   className="p-4 shadow-card hover:shadow-lg transition-shadow cursor-pointer"
-                  onClick={() => navigate(`/invoice/${invoice.id}`)}
+                  onClick={() => {
+                    console.log("Klik invoice:", invoice.id);
+                    navigate(`/invoice/${invoice.id}`);
+                  }}
                 >
+
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <p className="font-semibold text-foreground">{invoice.nomor_invoice}</p>
