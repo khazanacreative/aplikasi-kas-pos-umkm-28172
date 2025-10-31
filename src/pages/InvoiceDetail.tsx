@@ -243,28 +243,26 @@ const InvoiceDetail = () => {
           )}
         </Card>
 
-        {/* ✅ Tambahan baru: Item dalam Invoice */}
+        {/* ✅ Item dalam Invoice dari pos_transaksi */}
         {items.length > 0 && (
           <Card className="p-6 shadow-lg mb-6">
             <h3 className="text-lg font-bold mb-4">Item dalam Invoice</h3>
             <div className="divide-y">
               {items.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex justify-between items-center py-3"
-                >
+                <div key={item.id} className="flex justify-between items-center py-3">
                   <div>
-                    <p className="font-semibold">{item.nama_item}</p>
+                    <p className="font-semibold">{item.nama_barang}</p>
                     <p className="text-sm text-muted-foreground">
-                      {item.jumlah} × {formatCurrency(item.harga)}
+                      {item.qty} × {formatCurrency(item.harga)}
                     </p>
                   </div>
-                  <p className="font-bold">{formatCurrency(item.subtotal)}</p>
+                  <p className="font-bold">{formatCurrency(item.total)}</p>
                 </div>
               ))}
             </div>
           </Card>
         )}
+
 
         {transactions.length > 0 && (
           <Card className="p-6 shadow-lg mb-6">
