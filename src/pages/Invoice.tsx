@@ -275,50 +275,60 @@ const Invoice = () => {
         {/* Invoice List */}
         <div>
           <h3 className="text-lg font-semibold mb-4">Daftar Invoice</h3>
+
           <div className="space-y-3">
-            {invoices.map((invoice) => (
-              <Card 
-                key={invoice.id} 
-                className="p-4 shadow-card hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => navigate(`/invoice/${invoice.id}`)}
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-bold text-foreground">{invoice.nomor_invoice}</h4>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        invoice.status === "Lunas"
-                          ? "bg-success/10 text-success"
-                          : "bg-secondary/10 text-secondary"
-                      }`}>
+            {invoices.length === 0 ? (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground">Belum ada invoice</p>
+              </Card>
+            ) : (
+              invoices.map((invoice) => (
+                <Card
+                  key={invoice.id}
+                  className="p-4 shadow-card hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => navigate(`/invoice/${invoice.id}`)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="font-semibold text-foreground">{invoice.nomor_invoice}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {invoice.pelanggan} •{" "}
+                        {new Date(invoice.tanggal).toLocaleDateString("id-ID")}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-foreground">
+                        {formatCurrency(invoice.nominal)}
+                      </p>
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          invoice.status === "Lunas"
+                            ? "bg-success/10 text-success"
+                            : "bg-warning/10 text-warning"
+                        }`}
+                      >
                         {invoice.status}
                       </span>
                     </div>
-                    <p className="text-sm text-muted-foreground">{invoice.pelanggan}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{new Date(invoice.tanggal).toLocaleDateString('id-ID')}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-lg text-foreground">
-                      {formatCurrency(invoice.nominal)}
-                    </p>
-                  </div>
-                </div>
 
-                {invoice.status === "Belum Dibayar" && (
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      updateStatus(invoice.id, "Lunas");
-                    }}
-                    className="w-full bg-success hover:bg-success/90"
-                    size="sm"
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Tandai Lunas
-                  </Button>
-                )}
-              </Card>
-            ))}
+                  {/* Tombol tetap bisa diklik tanpa ikut membuka detail */}
+                  {invoice.status === "Belum Dibayar" && (
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation(); // mencegah klik card
+                        updateStatus(invoice.id, "Lunas");
+                      }}
+                      className="w-full mt-3 bg-success hover:bg-success/90"
+                      size="sm"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Tandai Lunas
+                    </Button>
+                  )}
+                </Card>
+              ))
+            )}
           </div>
         </div>
       </main>
