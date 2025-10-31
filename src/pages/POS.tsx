@@ -24,7 +24,7 @@ interface CartItem extends Product {
 }
 
 const POS = () => {
-  const { user, userRole } = useAuth();
+  const { user, userRole, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -35,6 +35,13 @@ const POS = () => {
   const [productStock, setProductStock] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [invoices, setInvoices] = useState<any[]>([]);
+
+  // Auth protection
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/auth");
+    }
+  }, [user, loading, navigate]);
 
   // Load products from localStorage on mount
   useEffect(() => {
@@ -293,6 +300,16 @@ const POS = () => {
       description: "Produk berhasil dihapus dari katalog",
     });
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-background pb-20 relative z-0">
