@@ -168,7 +168,7 @@ const Invoice = () => {
       />
 
        {/* Main Content */}
-       <main className="max-w-screen-xl mx-auto px-4 -mt-16 relative">
+       <main className="max-w-screen-xl mx-auto px-4 -mt-16 relative z-20">
         {/* Summary Cards */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <Card className="p-4 shadow-card">
