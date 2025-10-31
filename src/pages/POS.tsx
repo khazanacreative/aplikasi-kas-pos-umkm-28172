@@ -590,18 +590,24 @@ const POS = () => {
                 ) : (
                   <div className="space-y-3">
                     {invoices.map((invoice) => (
-                      <Card key={invoice.id} className="border-l-4 border-l-primary">
+                      <Card
+                        key={invoice.id}
+                        onClick={() => navigate(`/invoice/${invoice.id}`)}
+                        className="border-l-4 border-l-primary cursor-pointer hover:shadow-md transition-shadow"
+                      >
                         <CardContent className="p-4">
                           <div className="flex justify-between items-start mb-2">
                             <div>
                               <p className="font-semibold text-lg">{invoice.nomor_invoice}</p>
                               <p className="text-sm text-muted-foreground">{invoice.pelanggan}</p>
                             </div>
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              invoice.status === "Lunas" 
-                                ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" 
-                                : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
-                            }`}>
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                invoice.status === "Lunas"
+                                  ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                                  : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
+                              }`}
+                            >
                               {invoice.status}
                             </span>
                           </div>
@@ -610,7 +616,7 @@ const POS = () => {
                               {new Date(invoice.tanggal).toLocaleDateString("id-ID", {
                                 day: "numeric",
                                 month: "long",
-                                year: "numeric"
+                                year: "numeric",
                               })}
                             </p>
                             <p className="text-xl font-bold text-primary">
@@ -620,6 +626,7 @@ const POS = () => {
                         </CardContent>
                       </Card>
                     ))}
+
                   </div>
                 )}
               </CardContent>
