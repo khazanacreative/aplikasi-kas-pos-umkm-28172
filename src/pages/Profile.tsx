@@ -77,7 +77,7 @@ const Profile = () => {
                 id="namaUsaha"
                 type="text"
                 placeholder="Masukkan nama usaha"
-                defaultValue="Toko Sumber Rejeki"
+                defaultValue=""
               />
             </div>
 
@@ -91,7 +91,7 @@ const Profile = () => {
                 id="alamat"
                 type="text"
                 placeholder="Masukkan alamat usaha"
-                defaultValue="Jl. Merdeka No. 123, Jakarta"
+                defaultValue=""
               />
             </div>
 
@@ -105,7 +105,7 @@ const Profile = () => {
                 id="whatsapp"
                 type="tel"
                 placeholder="08123456789"
-                defaultValue="08123456789"
+                defaultValue=""
               />
             </div>
 
