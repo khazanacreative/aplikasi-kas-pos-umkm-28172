@@ -5,7 +5,7 @@ const BottomNav = () => {
   const location = useLocation();
 
   const navItems = [
-    { path: "/", icon: LayoutDashboard, label: "Dashboard" },
+    { path: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { path: "/transactions", icon: Receipt, label: "Transaksi" },
     { path: "/pos", icon: ShoppingCart, label: "Kasir" },
     { path: "/reports", icon: BarChart3, label: "Laporan" },
