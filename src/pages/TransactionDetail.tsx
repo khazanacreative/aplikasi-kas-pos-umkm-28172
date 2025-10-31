@@ -109,14 +109,16 @@ const TransactionDetail = () => {
       />
 
       <main className="max-w-screen-xl mx-auto px-4 -mt-16 relative z-10">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/transactions")}
-          className="mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Kembali
-        </Button>
+        <Card className="p-4 shadow-lg mb-6 bg-card">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/transactions")}
+            className="w-full justify-start"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Kembali
+          </Button>
+        </Card>
 
         <Card className="p-6 shadow-lg mb-6">
           <div className="flex items-center justify-between mb-6">
@@ -162,6 +164,14 @@ const TransactionDetail = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Kategori</p>
                 <p className="font-semibold">{transaction.kategori}</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div className="w-full">
+                <p className="text-sm text-muted-foreground">Keterangan</p>
+                <p className="font-medium bg-muted/50 p-3 rounded-lg mt-1">{transaction.keterangan}</p>
               </div>
             </div>
 

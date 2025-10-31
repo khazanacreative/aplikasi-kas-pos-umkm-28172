@@ -25,6 +25,7 @@ const InvoiceDetail = () => {
   const { user, loading } = useAuth();
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
   const [loadingData, setLoadingData] = useState(true);
+  const [transactions, setTransactions] = useState<any[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -58,6 +59,19 @@ const InvoiceDetail = () => {
     }
 
     setInvoice(data);
+
+    // Fetch related transactions
+    const { data: transactionsData } = await supabase
+      .from("transaksi")
+      .select("*")
+      .eq("invoice_id", id)
+      .eq("user_id", user?.id)
+      .order("created_at", { ascending: false });
+
+    if (transactionsData) {
+      setTransactions(transactionsData);
+    }
+
     setLoadingData(false);
   };
 
@@ -110,14 +124,16 @@ const InvoiceDetail = () => {
       />
 
       <main className="max-w-screen-xl mx-auto px-4 -mt-16 relative z-10">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/invoice")}
-          className="mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Kembali
-        </Button>
+        <Card className="p-4 shadow-lg mb-6 bg-card">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/invoice")}
+            className="w-full justify-start"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Kembali
+          </Button>
+        </Card>
 
         <Card className="p-6 shadow-lg mb-6">
           <div className="flex items-center justify-between mb-6">
@@ -193,6 +209,37 @@ const InvoiceDetail = () => {
             </Button>
           )}
         </Card>
+
+        {transactions.length > 0 && (
+          <Card className="p-6 shadow-lg mb-6">
+            <h3 className="text-lg font-bold mb-4">Detail Penjualan</h3>
+            <div className="space-y-3">
+              {transactions.map((transaction) => (
+                <div 
+                  key={transaction.id} 
+                  className="flex justify-between items-center p-4 bg-muted/50 rounded-lg hover:bg-muted/80 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/transaction/${transaction.id}`)}
+                >
+                  <div>
+                    <p className="font-semibold">{transaction.keterangan}</p>
+                    <p className="text-sm text-muted-foreground">{transaction.kategori}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(transaction.tanggal).toLocaleDateString('id-ID')}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-success">
+                      {formatCurrency(transaction.nominal)}
+                    </p>
+                    <span className="text-xs px-2 py-1 rounded-full bg-success/10 text-success">
+                      {transaction.jenis}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
       </main>
     </div>
   );
