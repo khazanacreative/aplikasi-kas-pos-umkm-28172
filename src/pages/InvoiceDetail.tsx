@@ -2,7 +2,14 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, Calendar, User, DollarSign, CheckCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  FileText,
+  Calendar,
+  User,
+  DollarSign,
+  CheckCircle,
+} from "lucide-react";
 import Header from "@/components/Header";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,15 +26,6 @@ interface InvoiceData {
   updated_at: string;
 }
 
-interface InvoiceItem {
-  id: string;
-  nama_item: string;
-  jumlah: number;
-  harga_satuan: number;
-  subtotal: number;
-  keterangan?: string;
-}
-
 const InvoiceDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -35,7 +33,7 @@ const InvoiceDetail = () => {
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [transactions, setTransactions] = useState<any[]>([]);
-  const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
+  const [items, setItems] = useState<any[]>([]); // ✅ Tambahan baru
 
   useEffect(() => {
     if (!loading && !user) {
@@ -51,6 +49,8 @@ const InvoiceDetail = () => {
 
   const fetchInvoiceDetail = async () => {
     setLoadingData(true);
+
+    // 🔹 Ambil data invoice utama
     const { data, error } = await supabase
       .from("invoice")
       .select("*")
@@ -70,7 +70,7 @@ const InvoiceDetail = () => {
 
     setInvoice(data);
 
-    // Fetch related transactions
+    // 🔹 Ambil transaksi terkait
     const { data: transactionsData } = await supabase
       .from("transaksi")
       .select("*")
@@ -80,7 +80,7 @@ const InvoiceDetail = () => {
 
     if (transactionsData) setTransactions(transactionsData);
 
-    // Fetch related invoice items
+    // 🔹 Ambil item dalam invoice
     const { data: itemsData, error: itemsError } = await supabase
       .from("invoice_items")
       .select("*")
@@ -93,8 +93,9 @@ const InvoiceDetail = () => {
         description: "Gagal memuat item penjualan",
         variant: "destructive",
       });
-    } else if (itemsData) {
-      setInvoiceItems(itemsData);
+      console.error("Fetch items error:", itemsError);
+    } else {
+      setItems(itemsData || []);
     }
 
     setLoadingData(false);
@@ -147,7 +148,11 @@ const InvoiceDetail = () => {
 
       <main className="max-w-screen-xl mx-auto px-4 -mt-16 relative z-10">
         <Card className="p-4 shadow-lg mb-6 bg-card">
-          <Button variant="ghost" onClick={() => navigate("/invoice")} className="w-full justify-start">
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/invoice")}
+            className="w-full justify-start"
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Kembali
           </Button>
@@ -202,7 +207,9 @@ const InvoiceDetail = () => {
               <DollarSign className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div>
                 <p className="text-sm text-muted-foreground">Nominal</p>
-                <p className="font-bold text-2xl text-primary">{formatCurrency(invoice.nominal)}</p>
+                <p className="font-bold text-2xl text-primary">
+                  {formatCurrency(invoice.nominal)}
+                </p>
               </div>
             </div>
           </div>
@@ -211,11 +218,15 @@ const InvoiceDetail = () => {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-muted-foreground">Dibuat pada</p>
-                <p className="font-medium">{new Date(invoice.created_at).toLocaleString("id-ID")}</p>
+                <p className="font-medium">
+                  {new Date(invoice.created_at).toLocaleString("id-ID")}
+                </p>
               </div>
               <div>
                 <p className="text-muted-foreground">Terakhir diubah</p>
-                <p className="font-medium">{new Date(invoice.updated_at).toLocaleString("id-ID")}</p>
+                <p className="font-medium">
+                  {new Date(invoice.updated_at).toLocaleString("id-ID")}
+                </p>
               </div>
             </div>
           </div>
@@ -232,55 +243,56 @@ const InvoiceDetail = () => {
           )}
         </Card>
 
-        {/* 💡 Detail Penjualan (invoice_items) */}
-        {invoiceItems.length > 0 && (
+        {/* ✅ Tambahan baru: Item dalam Invoice */}
+        {items.length > 0 && (
           <Card className="p-6 shadow-lg mb-6">
-            <h3 className="text-lg font-bold mb-4">Rincian Item Penjualan</h3>
-            <div className="border rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50">
-                  <tr>
-                    <th className="p-2 text-left">Nama Item</th>
-                    <th className="p-2 text-right">Jumlah</th>
-                    <th className="p-2 text-right">Harga Satuan</th>
-                    <th className="p-2 text-right">Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoiceItems.map((item) => (
-                    <tr key={item.id} className="border-t hover:bg-muted/30">
-                      <td className="p-2">{item.nama_item}</td>
-                      <td className="p-2 text-right">{item.jumlah}</td>
-                      <td className="p-2 text-right">{formatCurrency(item.harga_satuan)}</td>
-                      <td className="p-2 text-right font-semibold">{formatCurrency(item.subtotal)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <h3 className="text-lg font-bold mb-4">Item dalam Invoice</h3>
+            <div className="divide-y">
+              {items.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex justify-between items-center py-3"
+                >
+                  <div>
+                    <p className="font-semibold">{item.nama_item}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {item.jumlah} × {formatCurrency(item.harga)}
+                    </p>
+                  </div>
+                  <p className="font-bold">{formatCurrency(item.subtotal)}</p>
+                </div>
+              ))}
             </div>
           </Card>
         )}
 
-        {/* 💡 Related Transactions */}
         {transactions.length > 0 && (
           <Card className="p-6 shadow-lg mb-6">
-            <h3 className="text-lg font-bold mb-4">Transaksi Terkait</h3>
+            <h3 className="text-lg font-bold mb-4">Detail Penjualan</h3>
             <div className="space-y-3">
               {transactions.map((transaction) => (
                 <div
                   key={transaction.id}
                   className="flex justify-between items-center p-4 bg-muted/50 rounded-lg hover:bg-muted/80 transition-colors cursor-pointer"
-                  onClick={() => navigate(`/transactions/${transaction.id}`)}
+                  onClick={() =>
+                    navigate(`/transactions/${transaction.id}`)
+                  }
                 >
                   <div>
                     <p className="font-semibold">{transaction.keterangan}</p>
-                    <p className="text-sm text-muted-foreground">{transaction.kategori}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {transaction.kategori}
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(transaction.tanggal).toLocaleDateString("id-ID")}
+                      {new Date(transaction.tanggal).toLocaleDateString(
+                        "id-ID"
+                      )}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-success">{formatCurrency(transaction.nominal)}</p>
+                    <p className="font-bold text-success">
+                      {formatCurrency(transaction.nominal)}
+                    </p>
                     <span className="text-xs px-2 py-1 rounded-full bg-success/10 text-success">
                       {transaction.jenis}
                     </span>
