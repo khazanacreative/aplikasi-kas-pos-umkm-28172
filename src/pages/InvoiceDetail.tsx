@@ -243,25 +243,33 @@ const InvoiceDetail = () => {
           )}
         </Card>
 
-        {/* ✅ Item dalam Invoice dari pos_transaksi */}
-        {items.length > 0 && (
+        {/* ✅ Aman dari error dan tampil meski belum ada data */}
+        {Array.isArray(items) && items.length > 0 ? (
           <Card className="p-6 shadow-lg mb-6">
             <h3 className="text-lg font-bold mb-4">Item dalam Invoice</h3>
             <div className="divide-y">
-              {items.map((item) => (
-                <div key={item.id} className="flex justify-between items-center py-3">
+              {items.map((item, index) => (
+                <div
+                  key={item.id || index}
+                  className="flex justify-between items-center py-3"
+                >
                   <div>
-                    <p className="font-semibold">{item.nama_barang}</p>
+                    <p className="font-semibold">{item.nama_item || item.nama_barang || "Tanpa Nama"}</p>
                     <p className="text-sm text-muted-foreground">
-                      {item.qty} × {formatCurrency(item.harga)}
+                      {item.jumlah ?? 1} × {formatCurrency(item.harga ?? 0)}
                     </p>
                   </div>
-                  <p className="font-bold">{formatCurrency(item.total)}</p>
+                  <p className="font-bold">{formatCurrency(item.subtotal ?? (item.jumlah ?? 1) * (item.harga ?? 0))}</p>
                 </div>
               ))}
             </div>
           </Card>
+        ) : (
+          <Card className="p-6 shadow mb-6 text-center text-muted-foreground">
+            <p>Tidak ada item penjualan untuk invoice ini.</p>
+          </Card>
         )}
+
 
 
         {transactions.length > 0 && (
