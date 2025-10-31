@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileText, Calendar, User, DollarSign, CheckCircle, Clock } from "lucide-react";
+import { ArrowLeft, FileText, Calendar, User, DollarSign, CheckCircle } from "lucide-react";
 import Header from "@/components/Header";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,15 @@ interface InvoiceData {
   updated_at: string;
 }
 
+interface InvoiceItem {
+  id: string;
+  nama_item: string;
+  jumlah: number;
+  harga_satuan: number;
+  subtotal: number;
+  keterangan?: string;
+}
+
 const InvoiceDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -26,6 +35,7 @@ const InvoiceDetail = () => {
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -68,8 +78,23 @@ const InvoiceDetail = () => {
       .eq("user_id", user?.id)
       .order("created_at", { ascending: false });
 
-    if (transactionsData) {
-      setTransactions(transactionsData);
+    if (transactionsData) setTransactions(transactionsData);
+
+    // Fetch related invoice items
+    const { data: itemsData, error: itemsError } = await supabase
+      .from("invoice_items")
+      .select("*")
+      .eq("invoice_id", id)
+      .order("created_at", { ascending: true });
+
+    if (itemsError) {
+      toast({
+        title: "Error",
+        description: "Gagal memuat item penjualan",
+        variant: "destructive",
+      });
+    } else if (itemsData) {
+      setInvoiceItems(itemsData);
     }
 
     setLoadingData(false);
@@ -118,18 +143,11 @@ const InvoiceDetail = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20 relative z-0">
-      <Header 
-        title="Detail Invoice" 
-        subtitle="Informasi lengkap invoice"
-      />
+      <Header title="Detail Invoice" subtitle="Informasi lengkap invoice" />
 
       <main className="max-w-screen-xl mx-auto px-4 -mt-16 relative z-10">
         <Card className="p-4 shadow-lg mb-6 bg-card">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/invoice")}
-            className="w-full justify-start"
-          >
+          <Button variant="ghost" onClick={() => navigate("/invoice")} className="w-full justify-start">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Kembali
           </Button>
@@ -143,11 +161,13 @@ const InvoiceDetail = () => {
               </div>
               <div>
                 <h2 className="text-2xl font-bold">{invoice.nomor_invoice}</h2>
-                <span className={`inline-block mt-1 text-xs px-3 py-1 rounded-full ${
-                  invoice.status === "Lunas"
-                    ? "bg-success/10 text-success"
-                    : "bg-warning/10 text-warning"
-                }`}>
+                <span
+                  className={`inline-block mt-1 text-xs px-3 py-1 rounded-full ${
+                    invoice.status === "Lunas"
+                      ? "bg-success/10 text-success"
+                      : "bg-warning/10 text-warning"
+                  }`}
+                >
                   {invoice.status}
                 </span>
               </div>
@@ -167,12 +187,14 @@ const InvoiceDetail = () => {
               <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div>
                 <p className="text-sm text-muted-foreground">Tanggal Invoice</p>
-                <p className="font-semibold">{new Date(invoice.tanggal).toLocaleDateString('id-ID', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}</p>
+                <p className="font-semibold">
+                  {new Date(invoice.tanggal).toLocaleDateString("id-ID", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </p>
               </div>
             </div>
 
@@ -189,11 +211,11 @@ const InvoiceDetail = () => {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-muted-foreground">Dibuat pada</p>
-                <p className="font-medium">{new Date(invoice.created_at).toLocaleString('id-ID')}</p>
+                <p className="font-medium">{new Date(invoice.created_at).toLocaleString("id-ID")}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Terakhir diubah</p>
-                <p className="font-medium">{new Date(invoice.updated_at).toLocaleString('id-ID')}</p>
+                <p className="font-medium">{new Date(invoice.updated_at).toLocaleString("id-ID")}</p>
               </div>
             </div>
           </div>
@@ -210,13 +232,43 @@ const InvoiceDetail = () => {
           )}
         </Card>
 
+        {/* 💡 Detail Penjualan (invoice_items) */}
+        {invoiceItems.length > 0 && (
+          <Card className="p-6 shadow-lg mb-6">
+            <h3 className="text-lg font-bold mb-4">Rincian Item Penjualan</h3>
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="p-2 text-left">Nama Item</th>
+                    <th className="p-2 text-right">Jumlah</th>
+                    <th className="p-2 text-right">Harga Satuan</th>
+                    <th className="p-2 text-right">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoiceItems.map((item) => (
+                    <tr key={item.id} className="border-t hover:bg-muted/30">
+                      <td className="p-2">{item.nama_item}</td>
+                      <td className="p-2 text-right">{item.jumlah}</td>
+                      <td className="p-2 text-right">{formatCurrency(item.harga_satuan)}</td>
+                      <td className="p-2 text-right font-semibold">{formatCurrency(item.subtotal)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        )}
+
+        {/* 💡 Related Transactions */}
         {transactions.length > 0 && (
           <Card className="p-6 shadow-lg mb-6">
-            <h3 className="text-lg font-bold mb-4">Detail Penjualan</h3>
+            <h3 className="text-lg font-bold mb-4">Transaksi Terkait</h3>
             <div className="space-y-3">
               {transactions.map((transaction) => (
-                <div 
-                  key={transaction.id} 
+                <div
+                  key={transaction.id}
                   className="flex justify-between items-center p-4 bg-muted/50 rounded-lg hover:bg-muted/80 transition-colors cursor-pointer"
                   onClick={() => navigate(`/transactions/${transaction.id}`)}
                 >
@@ -224,13 +276,11 @@ const InvoiceDetail = () => {
                     <p className="font-semibold">{transaction.keterangan}</p>
                     <p className="text-sm text-muted-foreground">{transaction.kategori}</p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(transaction.tanggal).toLocaleDateString('id-ID')}
+                      {new Date(transaction.tanggal).toLocaleDateString("id-ID")}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-success">
-                      {formatCurrency(transaction.nominal)}
-                    </p>
+                    <p className="font-bold text-success">{formatCurrency(transaction.nominal)}</p>
                     <span className="text-xs px-2 py-1 rounded-full bg-success/10 text-success">
                       {transaction.jenis}
                     </span>
