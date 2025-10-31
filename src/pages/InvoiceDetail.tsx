@@ -82,7 +82,7 @@ const InvoiceDetail = () => {
 
     // 🔹 Ambil item dalam invoice
     const { data: itemsData, error: itemsError } = await supabase
-      .from("invoice_items")
+      .from("pos_transaksi")
       .select("*")
       .eq("invoice_id", id)
       .order("created_at", { ascending: true });
