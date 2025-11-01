@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import Header from "@/components/Header";
+import { useSearchParams } from "react-router-dom";
 import * as XLSX from "xlsx";
 
 interface Product {
@@ -27,6 +28,8 @@ const POS = () => {
   const { user, userRole, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab") || "kasir";
   
   const [cart, setCart] = useState<CartItem[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -314,27 +317,20 @@ const POS = () => {
   return (
     <div className="min-h-screen bg-background pb-20 relative z-0">
       {/* Header */}
-      <Header
-        title="KasirKu"
-        subtitle="Point of Sale System"
-      />
-
-      <div className="max-w-screen-xl mx-auto px-4 -mt-16 relative z-10">
-        <Tabs defaultValue="kasir" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="kasir">
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Kasir
-            </TabsTrigger>
-            <TabsTrigger value="katalog">
-              <Package className="h-4 w-4 mr-2" />
-              Katalog
-            </TabsTrigger>
-            <TabsTrigger value="invoice">
-              <FileText className="h-4 w-4 mr-2" />
-              Invoice
-            </TabsTrigger>
-          </TabsList>
+      <Header title="KasirKu" subtitle="Point of Sale System" />
+        <div className="max-w-screen-xl mx-auto px-4 -mt-16 relative z-10">
+          <Tabs defaultValue={tabParam} className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="kasir">
+                <ShoppingCart className="h-4 w-4 mr-2" /> Kasir
+              </TabsTrigger>
+              <TabsTrigger value="katalog">
+                <Package className="h-4 w-4 mr-2" /> Katalog
+              </TabsTrigger>
+              <TabsTrigger value="invoice">
+                <FileText className="h-4 w-4 mr-2" /> Invoice
+              </TabsTrigger>
+            </TabsList>
 
           {/* Kasir Tab */}
           <TabsContent value="kasir" className="space-y-4">
