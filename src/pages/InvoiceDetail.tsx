@@ -354,54 +354,24 @@ const InvoiceDetail = () => {
 
         {invoiceItems.length > 0 && (
           <Card className="p-6 shadow-lg mb-6">
-            <h3 className="text-lg font-bold mb-4">Detail Item Penjualan</h3>
-            <div className="space-y-3">
+            <h3 className="text-lg font-bold mb-4">Item Penjualan</h3>
+            <div className="space-y-2">
               {invoiceItems.map((item, index) => (
                 <div
                   key={item.id}
-                  className="p-4 bg-muted/50 rounded-lg"
+                  className="flex justify-between items-center p-3 bg-muted/50 rounded-lg"
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex-1">
-                      <p className="font-semibold text-lg">{item.nama_item}</p>
-                      {item.keterangan && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {item.keterangan}
-                        </p>
-                      )}
-                    </div>
-                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                      #{index + 1}
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-muted-foreground">
+                      {index + 1}.
                     </span>
+                    <span className="font-medium">{item.nama_item}</span>
                   </div>
-                  <div className="grid grid-cols-3 gap-4 mt-3 pt-3 border-t">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Jumlah</p>
-                      <p className="font-semibold">{item.jumlah}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Harga Satuan</p>
-                      <p className="font-semibold">
-                        {formatCurrency(item.harga_satuan)}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-muted-foreground">Subtotal</p>
-                      <p className="font-bold text-primary">
-                        {formatCurrency(item.subtotal)}
-                      </p>
-                    </div>
-                  </div>
+                  <span className="font-semibold text-primary">
+                    {item.jumlah} pcs
+                  </span>
                 </div>
               ))}
-            </div>
-            <div className="mt-4 pt-4 border-t">
-              <div className="flex justify-between items-center">
-                <span className="font-semibold text-lg">Total Invoice</span>
-                <span className="font-bold text-2xl text-primary">
-                  {formatCurrency(invoice.nominal)}
-                </span>
-              </div>
             </div>
           </Card>
         )}
