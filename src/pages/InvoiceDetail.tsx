@@ -9,6 +9,8 @@ import {
   User,
   DollarSign,
   CheckCircle,
+  Share2,
+  Download,
 } from "lucide-react";
 import Header from "@/components/Header";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,7 +35,6 @@ const InvoiceDetail = () => {
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [transactions, setTransactions] = useState<any[]>([]);
-  const [items, setItems] = useState<any[]>([]); // ✅ Tambahan baru
 
   useEffect(() => {
     if (!loading && !user) {
@@ -50,7 +51,6 @@ const InvoiceDetail = () => {
   const fetchInvoiceDetail = async () => {
     setLoadingData(true);
 
-    // 🔹 Ambil data invoice utama
     const { data, error } = await supabase
       .from("invoice")
       .select("*")
@@ -70,7 +70,6 @@ const InvoiceDetail = () => {
 
     setInvoice(data);
 
-    // 🔹 Ambil transaksi terkait
     const { data: transactionsData } = await supabase
       .from("transaksi")
       .select("*")
@@ -79,32 +78,6 @@ const InvoiceDetail = () => {
       .order("created_at", { ascending: false });
 
     if (transactionsData) setTransactions(transactionsData);
-
-    // 🔹 Ambil item dalam invoice berdasarkan transaksi yang terkait
-    try {
-      let itemsData: any[] = [];
-
-      if (transactionsData && transactionsData.length > 0) {
-        const transaksiIds = transactionsData.map((t) => t.id);
-
-        const { data: posData, error: posError } = await supabase
-          .from("pos_transaksi")
-          .select("*")
-          .in("transaksi_id", transaksiIds)
-          .order("created_at", { ascending: true });
-
-        if (posError) {
-          console.error("Fetch pos_transaksi error:", posError);
-        } else {
-          itemsData = posData ?? [];
-        }
-      }
-
-      setItems(itemsData);
-    } catch (err) {
-      console.error("Unexpected error saat fetch item:", err);
-      setItems([]);
-    }
 
     setLoadingData(false);
   };
@@ -140,6 +113,63 @@ const InvoiceDetail = () => {
     }).format(value);
   };
 
+  const handleShare = async () => {
+    const shareData = {
+      title: `Invoice ${invoice?.nomor_invoice}`,
+      text: `Invoice untuk ${invoice?.pelanggan} - ${formatCurrency(invoice?.nominal || 0)}`,
+      url: window.location.href,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        console.error("Error sharing:", err);
+      }
+    } else {
+      await navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: "Link disalin",
+        description: "Link invoice telah disalin ke clipboard",
+      });
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    const { default: jsPDF } = await import("jspdf");
+    const { default: html2canvas } = await import("html2canvas");
+
+    const element = document.getElementById("invoice-content");
+    if (!element || !invoice) return;
+
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+      pdf.save(`Invoice_${invoice.nomor_invoice}.pdf`);
+
+      toast({
+        title: "Berhasil",
+        description: "Invoice berhasil diunduh sebagai PDF",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal mengunduh PDF",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading || loadingData) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -156,17 +186,37 @@ const InvoiceDetail = () => {
 
       <main className="max-w-screen-xl mx-auto px-4 -mt-16 relative z-10">
         <Card className="p-4 shadow-lg mb-6 bg-card">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/invoice")}
-            className="w-full justify-start"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Kembali
-          </Button>
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/invoice")}
+              className="justify-start"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Kembali
+            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleShare}
+              >
+                <Share2 className="h-4 w-4 mr-2" />
+                Share
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadPDF}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                PDF
+              </Button>
+            </div>
+          </div>
         </Card>
 
-        <Card className="p-6 shadow-lg mb-6">
+        <Card id="invoice-content" className="p-6 shadow-lg mb-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="bg-primary/10 p-3 rounded-xl">
@@ -250,35 +300,6 @@ const InvoiceDetail = () => {
             </Button>
           )}
         </Card>
-
-        {/* ✅ Aman dari error dan tampil meski belum ada data */}
-        {Array.isArray(items) && items.length > 0 ? (
-          <Card className="p-6 shadow-lg mb-6">
-            <h3 className="text-lg font-bold mb-4">Item dalam Invoice</h3>
-            <div className="divide-y">
-              {items.map((item, index) => (
-                <div
-                  key={item.id || index}
-                  className="flex justify-between items-center py-3"
-                >
-                  <div>
-                    <p className="font-semibold">{item.nama_item || item.nama_barang || "Tanpa Nama"}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {item.jumlah ?? 1} × {formatCurrency(item.harga ?? 0)}
-                    </p>
-                  </div>
-                  <p className="font-bold">{formatCurrency(item.subtotal ?? (item.jumlah ?? 1) * (item.harga ?? 0))}</p>
-                </div>
-              ))}
-            </div>
-          </Card>
-        ) : (
-          <Card className="p-6 shadow mb-6 text-center text-muted-foreground">
-            <p>Tidak ada item penjualan untuk invoice ini.</p>
-          </Card>
-        )}
-
-
 
         {transactions.length > 0 && (
           <Card className="p-6 shadow-lg mb-6">
