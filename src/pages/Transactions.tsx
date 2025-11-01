@@ -37,6 +37,7 @@ const Transactions = () => {
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") || "tambah";
 
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filterDate, setFilterDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -48,6 +49,10 @@ const Transactions = () => {
     nominal: "",
     invoice_id: "",
   });
+
+  useEffect(() => {
+    setActiveTab(defaultTab);
+  }, [defaultTab]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -206,8 +211,7 @@ const Transactions = () => {
       />
 
       <main className="max-w-screen-xl mx-auto px-4 -mt-16 relative z-10">
-        {/* Default tab mengikuti query ?tab=riwayat atau ?tab=tambah */}
-        <Tabs defaultValue={defaultTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="tambah" className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
