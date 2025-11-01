@@ -9,7 +9,7 @@ import { Calendar, Plus, History, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Invoice {
@@ -34,6 +34,9 @@ interface Transaction {
 const Transactions = () => {
   const navigate = useNavigate();
   const { user, userRole, loading } = useAuth();
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get("tab") || "tambah";
+
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filterDate, setFilterDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -88,7 +91,6 @@ const Transactions = () => {
       .eq("tanggal", filterDate)
       .order("created_at", { ascending: false });
 
-    // Show user's transactions: either their branch transactions or their own transactions without branch
     if (userRole?.branch_id) {
       query = query.or(`branch_id.eq.${userRole.branch_id},branch_id.is.null`);
     }
@@ -173,9 +175,7 @@ const Transactions = () => {
       description: "Transaksi berhasil ditambahkan!",
     });
 
-    // Update filter date to the transaction date so it appears in history
     setFilterDate(formData.tanggal);
-
     setFormData({
       tanggal: new Date().toISOString().split('T')[0],
       keterangan: "",
@@ -206,7 +206,8 @@ const Transactions = () => {
       />
 
       <main className="max-w-screen-xl mx-auto px-4 -mt-16 relative z-10">
-        <Tabs defaultValue="tambah" className="w-full">
+        {/* Default tab mengikuti query ?tab=riwayat atau ?tab=tambah */}
+        <Tabs defaultValue={defaultTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="tambah" className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
@@ -341,7 +342,7 @@ const Transactions = () => {
                   size="lg"
                 >
                   <Plus className="h-5 w-5 mr-2" />
-                  Simpan Transaksi
+                  Simpan
                 </Button>
               </form>
             </Card>

@@ -170,9 +170,10 @@ const Dashboard = () => {
           </div>
         </Card>
 
+        {/* Tombol Tambah Transaksi */}
         <div className="mb-6">
           <Button 
-            onClick={() => navigate("/transactions")}
+            onClick={() => navigate("/transactions?tab=tambah")}
             className="w-full py-6 text-lg font-semibold gradient-primary border-0 shadow-md hover:shadow-lg transition-all"
             size="lg"
           >
@@ -181,6 +182,7 @@ const Dashboard = () => {
           </Button>
         </div>
 
+        {/* Statistik Ringkas */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <StatCard
             title="Total Saldo"
@@ -202,13 +204,14 @@ const Dashboard = () => {
           />
         </div>
 
+        {/* Transaksi Terbaru */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Transaksi Terbaru</h3>
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={() => navigate("/transactions")}
+              onClick={() => navigate("/transactions?tab=riwayat")}
             >
               Lihat Semua
             </Button>
@@ -248,6 +251,7 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* Invoice Terbaru */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">Invoice Terbaru</h3>
