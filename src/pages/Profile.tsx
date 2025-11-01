@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,16 @@ const Profile = () => {
   const navigate = useNavigate();
   const { user, loading, signOut } = useAuth();
 
+  // 🔹 State untuk menyimpan data form
+  const [formData, setFormData] = useState({
+    namaUsaha: "",
+    alamat: "",
+    whatsapp: "",
+  });
+
+  // 🔹 State untuk kontrol read-only
+  const [isReadOnly, setIsReadOnly] = useState(false);
+
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");
@@ -20,6 +30,27 @@ const Profile = () => {
 
   const handleLogout = async () => {
     await signOut();
+  };
+
+  const handleChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.id]: e.target.value,
+    }));
+  };
+
+  const handleSave = (e) => {
+    e.preventDefault();
+
+    // Simulasi penyimpanan data
+    console.log("Data disimpan:", formData);
+
+    // Setelah disimpan, ubah menjadi read-only
+    setIsReadOnly(true);
+  };
+
+  const handleEdit = () => {
+    setIsReadOnly(false);
   };
 
   if (loading) {
@@ -31,14 +62,11 @@ const Profile = () => {
   }
 
   if (!user) return null;
+
   return (
     <div className="min-h-screen bg-background pb-20 relative z-0">
-      <Header 
-        title="Profil" 
-        subtitle="Kelola informasi usaha Anda"
-      />
+      <Header title="Profil" subtitle="Kelola informasi usaha Anda" />
 
-      {/* Main Content */}
       <main className="max-w-screen-xl mx-auto px-4 -mt-16 relative z-10">
         <Card className="p-6 shadow-lg animate-fade-in">
           <div className="flex items-center gap-3 mb-6">
@@ -48,7 +76,7 @@ const Profile = () => {
             <h2 className="text-xl font-bold">Informasi Usaha</h2>
           </div>
 
-          <form className="space-y-5">
+          <form className="space-y-5" onSubmit={handleSave}>
             {/* ID Akun */}
             <div className="space-y-2">
               <Label htmlFor="accountId" className="flex items-center gap-2">
@@ -77,7 +105,10 @@ const Profile = () => {
                 id="namaUsaha"
                 type="text"
                 placeholder="Masukkan nama usaha"
-                defaultValue=""
+                value={formData.namaUsaha}
+                onChange={handleChange}
+                readOnly={isReadOnly}
+                className={isReadOnly ? "bg-muted" : ""}
               />
             </div>
 
@@ -91,7 +122,10 @@ const Profile = () => {
                 id="alamat"
                 type="text"
                 placeholder="Masukkan alamat usaha"
-                defaultValue=""
+                value={formData.alamat}
+                onChange={handleChange}
+                readOnly={isReadOnly}
+                className={isReadOnly ? "bg-muted" : ""}
               />
             </div>
 
@@ -105,18 +139,35 @@ const Profile = () => {
                 id="whatsapp"
                 type="tel"
                 placeholder="08123456789"
-                defaultValue=""
+                value={formData.whatsapp}
+                onChange={handleChange}
+                readOnly={isReadOnly}
+                className={isReadOnly ? "bg-muted" : ""}
               />
             </div>
 
-            {/* Save Button */}
-            <Button
-              type="submit"
-              className="w-full py-6 text-lg font-semibold gradient-primary border-0"
-              size="lg"
-            >
-              Simpan Perubahan
-            </Button>
+            {/* Tombol Aksi */}
+            <div className="flex gap-3">
+              <Button
+                type="submit"
+                className="flex-1 py-6 text-lg font-semibold gradient-primary border-0"
+                size="lg"
+              >
+                Simpan Perubahan
+              </Button>
+
+              {isReadOnly && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  className="py-6 text-lg font-semibold"
+                  onClick={handleEdit}
+                >
+                  Edit
+                </Button>
+              )}
+            </div>
           </form>
         </Card>
 
@@ -129,9 +180,9 @@ const Profile = () => {
             <Button variant="outline" className="w-full justify-start" size="lg">
               API Integration
             </Button>
-            <Button 
-              variant="outline" 
-              className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10" 
+            <Button
+              variant="outline"
+              className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
               size="lg"
               onClick={handleLogout}
             >
