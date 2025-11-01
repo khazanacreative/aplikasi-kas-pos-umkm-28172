@@ -35,6 +35,7 @@ const InvoiceDetail = () => {
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [invoiceItems, setInvoiceItems] = useState<any[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -78,6 +79,15 @@ const InvoiceDetail = () => {
       .order("created_at", { ascending: false });
 
     if (transactionsData) setTransactions(transactionsData);
+
+    // Fetch invoice items
+    const { data: itemsData } = await supabase
+      .from("invoice_items")
+      .select("*")
+      .eq("invoice_id", id)
+      .order("created_at", { ascending: true });
+
+    if (itemsData) setInvoiceItems(itemsData);
 
     setLoadingData(false);
   };
@@ -300,6 +310,47 @@ const InvoiceDetail = () => {
             </Button>
           )}
         </Card>
+
+        {invoiceItems.length > 0 && (
+          <Card className="p-6 shadow-lg mb-6">
+            <h3 className="text-lg font-bold mb-4">Detail Item Penjualan</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-2 text-sm font-semibold text-muted-foreground">Nama Item</th>
+                    <th className="text-right py-3 px-2 text-sm font-semibold text-muted-foreground">Jumlah</th>
+                    <th className="text-right py-3 px-2 text-sm font-semibold text-muted-foreground">Harga Satuan</th>
+                    <th className="text-right py-3 px-2 text-sm font-semibold text-muted-foreground">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoiceItems.map((item) => (
+                    <tr key={item.id} className="border-b last:border-0">
+                      <td className="py-3 px-2">
+                        <p className="font-medium">{item.nama_item}</p>
+                        {item.keterangan && (
+                          <p className="text-sm text-muted-foreground">{item.keterangan}</p>
+                        )}
+                      </td>
+                      <td className="text-right py-3 px-2 font-medium">{item.jumlah}</td>
+                      <td className="text-right py-3 px-2">{formatCurrency(item.harga_satuan)}</td>
+                      <td className="text-right py-3 px-2 font-bold text-primary">{formatCurrency(item.subtotal)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2">
+                    <td colSpan={3} className="text-right py-3 px-2 font-bold">Total:</td>
+                    <td className="text-right py-3 px-2 font-bold text-xl text-primary">
+                      {formatCurrency(invoice.nominal)}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </Card>
+        )}
 
         {transactions.length > 0 && (
           <Card className="p-6 shadow-lg mb-6">

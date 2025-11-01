@@ -88,6 +88,50 @@ export type Database = {
           },
         ]
       }
+      invoice_items: {
+        Row: {
+          created_at: string
+          harga_satuan: number
+          id: string
+          invoice_id: string
+          jumlah: number
+          keterangan: string | null
+          nama_item: string
+          subtotal: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          harga_satuan: number
+          id?: string
+          invoice_id: string
+          jumlah: number
+          keterangan?: string | null
+          nama_item: string
+          subtotal: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          harga_satuan?: number
+          id?: string
+          invoice_id?: string
+          jumlah?: number
+          keterangan?: string | null
+          nama_item?: string
+          subtotal?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoice"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pos_transaksi: {
         Row: {
           branch_id: string
