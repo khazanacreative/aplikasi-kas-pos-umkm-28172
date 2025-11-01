@@ -211,7 +211,7 @@ const Transactions = () => {
       />
 
       <main className="max-w-screen-xl mx-auto px-4 -mt-16 relative z-10">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="tambah" className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
