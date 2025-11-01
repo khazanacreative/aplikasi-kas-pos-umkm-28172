@@ -51,8 +51,8 @@ const Profile = () => {
 
   const handleEdit = () => {
     setIsReadOnly(false);
-  }; 
-  
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -153,7 +153,7 @@ const Profile = () => {
                 className="flex-1 py-6 text-lg font-semibold gradient-primary border-0"
                 size="lg"
               >
-                Simpan Perubahan
+                Simpan
               </Button>
 
               {isReadOnly && (
