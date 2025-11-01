@@ -258,7 +258,7 @@ const Dashboard = () => {
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={() => navigate("/invoice")}
+              onClick={() => navigate("/pos?tab=invoice")}
             >
               Lihat Semua
             </Button>
