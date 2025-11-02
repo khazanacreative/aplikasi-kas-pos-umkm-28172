@@ -36,6 +36,12 @@ const Transactions = () => {
   const { user, userRole, loading } = useAuth();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") || "tambah";
+  
+  // Get pre-filled data from URL params
+  const prefilledInvoiceId = searchParams.get("invoice_id") || "";
+  const prefilledInvoiceNumber = searchParams.get("invoice_number") || "";
+  const prefilledCustomer = searchParams.get("customer") || "";
+  const prefilledNominal = searchParams.get("nominal") || "";
 
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -43,11 +49,13 @@ const Transactions = () => {
   const [filterDate, setFilterDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [formData, setFormData] = useState({
     tanggal: new Date().toISOString().split('T')[0],
-    keterangan: "",
-    kategori: "",
-    jenis: "",
-    nominal: "",
-    invoice_id: "",
+    keterangan: prefilledInvoiceNumber && prefilledCustomer 
+      ? `Penjualan Tunai - ${prefilledCustomer} (${prefilledInvoiceNumber})`
+      : "",
+    kategori: prefilledInvoiceId ? "Penjualan Tunai" : "",
+    jenis: prefilledInvoiceId ? "Debet" : "",
+    nominal: prefilledNominal,
+    invoice_id: prefilledInvoiceId,
   });
 
   useEffect(() => {
@@ -175,6 +183,18 @@ const Transactions = () => {
       return;
     }
 
+    // If this transaction is linked to an invoice, update invoice status to "Lunas"
+    if (formData.invoice_id) {
+      const { error: updateError } = await supabase
+        .from("invoice")
+        .update({ status: "Lunas" })
+        .eq("id", formData.invoice_id);
+      
+      if (updateError) {
+        console.error("Error updating invoice status:", updateError);
+      }
+    }
+
     toast({
       title: "Berhasil",
       description: "Transaksi berhasil ditambahkan!",
@@ -189,6 +209,9 @@ const Transactions = () => {
       nominal: "",
       invoice_id: "",
     });
+
+    // Clear URL params
+    navigate("/transactions?tab=tambah", { replace: true });
 
     fetchTransactions();
   };

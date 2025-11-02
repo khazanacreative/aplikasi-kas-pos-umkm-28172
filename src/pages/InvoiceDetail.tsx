@@ -92,27 +92,19 @@ const InvoiceDetail = () => {
     setLoadingData(false);
   };
 
-  const updateStatus = async (newStatus: string) => {
-    const { error } = await supabase
-      .from("invoice")
-      .update({ status: newStatus })
-      .eq("id", id);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Gagal mengubah status invoice",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    toast({
-      title: "Berhasil",
-      description: `Invoice telah ditandai sebagai ${newStatus}`,
+  const handleMarkAsPaid = () => {
+    if (!invoice) return;
+    
+    // Redirect to transactions page with pre-filled data
+    const searchParams = new URLSearchParams({
+      tab: "tambah",
+      invoice_id: invoice.id,
+      invoice_number: invoice.nomor_invoice,
+      customer: invoice.pelanggan,
+      nominal: invoice.nominal.toString(),
     });
-
-    fetchInvoiceDetail();
+    
+    navigate(`/transactions?${searchParams.toString()}`);
   };
 
   const formatCurrency = (value: number) => {
@@ -313,14 +305,14 @@ const InvoiceDetail = () => {
               </div>
             </div>
 
-            {invoice.status === "Belum Dibayar" && (
+            {invoice.status === "Belum Lunas" && (
               <Button
-                onClick={() => updateStatus("Lunas")}
+                onClick={handleMarkAsPaid}
                 className="w-full mt-6 bg-success hover:bg-success/90"
                 size="lg"
               >
                 <CheckCircle className="h-5 w-5 mr-2" />
-                Tandai Lunas
+                Lunas - Catat Penjualan
               </Button>
             )}
           </Card>
