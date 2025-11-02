@@ -154,17 +154,30 @@ const InvoiceDetail = () => {
 
     try {
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 1.5,
         useCORS: true,
         logging: false,
+        backgroundColor: "#ffffff",
       });
 
-      const imgData = canvas.toDataURL("image/png");
+      const imgData = canvas.toDataURL("image/jpeg", 0.7);
       const pdf = new jsPDF("p", "mm", "a4");
       const imgWidth = 210;
+      const pageHeight = 297;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
 
-      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
       pdf.save(`Invoice_${invoice.nomor_invoice}.pdf`);
 
       toast({
@@ -226,131 +239,133 @@ const InvoiceDetail = () => {
           </div>
         </Card>
 
-        <Card id="invoice-content" className="p-6 shadow-lg mb-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="bg-primary/10 p-3 rounded-xl">
-                <FileText className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold">{invoice.nomor_invoice}</h2>
-                <span
-                  className={`inline-block mt-1 text-xs px-3 py-1 rounded-full ${
-                    invoice.status === "Lunas"
-                      ? "bg-success/10 text-success"
-                      : "bg-warning/10 text-warning"
-                  }`}
-                >
-                  {invoice.status}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4 mb-6">
-            <div className="flex items-start gap-3">
-              <User className="h-5 w-5 text-muted-foreground mt-0.5" />
-              <div>
-                <p className="text-sm text-muted-foreground">Pelanggan</p>
-                <p className="font-semibold text-lg">{invoice.pelanggan}</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
-              <div>
-                <p className="text-sm text-muted-foreground">Tanggal Invoice</p>
-                <p className="font-semibold">
-                  {new Date(invoice.tanggal).toLocaleDateString("id-ID", {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <DollarSign className="h-5 w-5 text-muted-foreground mt-0.5" />
-              <div>
-                <p className="text-sm text-muted-foreground">Nominal</p>
-                <p className="font-bold text-2xl text-primary">
-                  {formatCurrency(invoice.nominal)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t pt-4 mt-4">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-muted-foreground">Dibuat pada</p>
-                <p className="font-medium">
-                  {new Date(invoice.created_at).toLocaleString("id-ID")}
-                </p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Terakhir diubah</p>
-                <p className="font-medium">
-                  {new Date(invoice.updated_at).toLocaleString("id-ID")}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {invoice.status === "Belum Dibayar" && (
-            <Button
-              onClick={() => updateStatus("Lunas")}
-              className="w-full mt-6 bg-success hover:bg-success/90"
-              size="lg"
-            >
-              <CheckCircle className="h-5 w-5 mr-2" />
-              Tandai Lunas
-            </Button>
-          )}
-        </Card>
-
-        {invoiceItems.length > 0 && (
+        <div id="invoice-content">
           <Card className="p-6 shadow-lg mb-6">
-            <h3 className="text-lg font-bold mb-4">Detail Item Penjualan</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-2 text-sm font-semibold text-muted-foreground">Nama Item</th>
-                    <th className="text-right py-3 px-2 text-sm font-semibold text-muted-foreground">Jumlah</th>
-                    <th className="text-right py-3 px-2 text-sm font-semibold text-muted-foreground">Harga Satuan</th>
-                    <th className="text-right py-3 px-2 text-sm font-semibold text-muted-foreground">Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoiceItems.map((item) => (
-                    <tr key={item.id} className="border-b last:border-0">
-                      <td className="py-3 px-2">
-                        <p className="font-medium">{item.nama_item}</p>
-                        {item.keterangan && (
-                          <p className="text-sm text-muted-foreground">{item.keterangan}</p>
-                        )}
-                      </td>
-                      <td className="text-right py-3 px-2 font-medium">{item.jumlah}</td>
-                      <td className="text-right py-3 px-2">{formatCurrency(item.harga_satuan)}</td>
-                      <td className="text-right py-3 px-2 font-bold text-primary">{formatCurrency(item.subtotal)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2">
-                    <td colSpan={3} className="text-right py-3 px-2 font-bold">Total:</td>
-                    <td className="text-right py-3 px-2 font-bold text-xl text-primary">
-                      {formatCurrency(invoice.nominal)}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-primary/10 p-3 rounded-xl">
+                  <FileText className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">{invoice.nomor_invoice}</h2>
+                  <span
+                    className={`inline-block mt-1 text-xs px-3 py-1 rounded-full ${
+                      invoice.status === "Lunas"
+                        ? "bg-success/10 text-success"
+                        : "bg-warning/10 text-warning"
+                    }`}
+                  >
+                    {invoice.status}
+                  </span>
+                </div>
+              </div>
             </div>
+
+            <div className="space-y-4 mb-6">
+              <div className="flex items-start gap-3">
+                <User className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Pelanggan</p>
+                  <p className="font-semibold text-lg">{invoice.pelanggan}</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Tanggal Invoice</p>
+                  <p className="font-semibold">
+                    {new Date(invoice.tanggal).toLocaleDateString("id-ID", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <DollarSign className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Nominal</p>
+                  <p className="font-bold text-2xl text-primary">
+                    {formatCurrency(invoice.nominal)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t pt-4 mt-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Dibuat pada</p>
+                  <p className="font-medium">
+                    {new Date(invoice.created_at).toLocaleString("id-ID")}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Terakhir diubah</p>
+                  <p className="font-medium">
+                    {new Date(invoice.updated_at).toLocaleString("id-ID")}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {invoice.status === "Belum Dibayar" && (
+              <Button
+                onClick={() => updateStatus("Lunas")}
+                className="w-full mt-6 bg-success hover:bg-success/90"
+                size="lg"
+              >
+                <CheckCircle className="h-5 w-5 mr-2" />
+                Tandai Lunas
+              </Button>
+            )}
           </Card>
-        )}
+
+          {invoiceItems.length > 0 && (
+            <Card className="p-6 shadow-lg mb-6">
+              <h3 className="text-lg font-bold mb-4">Detail Item Penjualan</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-3 px-2 text-sm font-semibold text-muted-foreground">Nama Item</th>
+                      <th className="text-right py-3 px-2 text-sm font-semibold text-muted-foreground">Jumlah</th>
+                      <th className="text-right py-3 px-2 text-sm font-semibold text-muted-foreground">Harga Satuan</th>
+                      <th className="text-right py-3 px-2 text-sm font-semibold text-muted-foreground">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoiceItems.map((item) => (
+                      <tr key={item.id} className="border-b last:border-0">
+                        <td className="py-3 px-2">
+                          <p className="font-medium">{item.nama_item}</p>
+                          {item.keterangan && (
+                            <p className="text-sm text-muted-foreground">{item.keterangan}</p>
+                          )}
+                        </td>
+                        <td className="text-right py-3 px-2 font-medium">{item.jumlah}</td>
+                        <td className="text-right py-3 px-2">{formatCurrency(item.harga_satuan)}</td>
+                        <td className="text-right py-3 px-2 font-bold text-primary">{formatCurrency(item.subtotal)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2">
+                      <td colSpan={3} className="text-right py-3 px-2 font-bold">Total:</td>
+                      <td className="text-right py-3 px-2 font-bold text-xl text-primary">
+                        {formatCurrency(invoice.nominal)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </Card>
+          )}
+        </div>
 
 
         {transactions.length > 0 && (
