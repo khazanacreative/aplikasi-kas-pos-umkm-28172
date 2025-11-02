@@ -201,7 +201,21 @@ const Transactions = () => {
     }).format(value);
   };
 
-  const kategoris = ["Penjualan", "Pembelian", "Gaji", "Operasional", "Lainnya"];
+  const kategoriJenisMap: Record<string, "Debet" | "Kredit"> = {
+    "Modal Awal / Setoran Pemilik": "Debet",
+    "Penjualan Tunai": "Debet",
+    "Piutang": "Debet",
+    "Pembelian Barang / Belanja": "Kredit",
+    "Gaji": "Kredit",
+    "Operasional": "Kredit",
+    "Pembelian Aset": "Kredit",
+    "Pembayaran Utang": "Kredit",
+    "Penerimaan Pinjaman / Utang Baru": "Debet",
+    "Pengambilan Pemilik": "Kredit",
+    "Pendapatan Jasa Lain-lain": "Debet",
+  };
+
+  const kategoris = Object.keys(kategoriJenisMap);
 
   return (
     <div className="min-h-screen bg-background pb-20 relative z-0">
@@ -261,7 +275,15 @@ const Transactions = () => {
                   <Label htmlFor="kategori">Kategori</Label>
                   <Select
                     value={formData.kategori}
-                    onValueChange={(value) => setFormData({ ...formData, kategori: value, invoice_id: "" })}
+                    onValueChange={(value) => {
+                      const suggestedJenis = kategoriJenisMap[value];
+                      setFormData({ 
+                        ...formData, 
+                        kategori: value, 
+                        jenis: suggestedJenis,
+                        invoice_id: "" 
+                      });
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih kategori" />
@@ -276,7 +298,7 @@ const Transactions = () => {
                   </Select>
                 </div>
 
-                {formData.kategori === "Penjualan" && (
+                {formData.kategori === "Penjualan Tunai" && (
                   <div className="space-y-2">
                     <Label htmlFor="invoice">Pilih Invoice (Opsional)</Label>
                     <Select
@@ -317,12 +339,34 @@ const Transactions = () => {
                       <SelectValue placeholder="Pilih jenis" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Debet">
-                        <span className="text-success font-medium">Debet (Pemasukan)</span>
-                      </SelectItem>
-                      <SelectItem value="Kredit">
-                        <span className="text-destructive font-medium">Kredit (Pengeluaran)</span>
-                      </SelectItem>
+                      {formData.kategori && kategoriJenisMap[formData.kategori] === "Debet" ? (
+                        <>
+                          <SelectItem value="Debet">
+                            <span className="text-success font-medium">✓ Debet (Pemasukan)</span>
+                          </SelectItem>
+                          <SelectItem value="Kredit">
+                            <span className="text-destructive font-medium">Kredit (Pengeluaran)</span>
+                          </SelectItem>
+                        </>
+                      ) : formData.kategori && kategoriJenisMap[formData.kategori] === "Kredit" ? (
+                        <>
+                          <SelectItem value="Kredit">
+                            <span className="text-destructive font-medium">✓ Kredit (Pengeluaran)</span>
+                          </SelectItem>
+                          <SelectItem value="Debet">
+                            <span className="text-success font-medium">Debet (Pemasukan)</span>
+                          </SelectItem>
+                        </>
+                      ) : (
+                        <>
+                          <SelectItem value="Debet">
+                            <span className="text-success font-medium">Debet (Pemasukan)</span>
+                          </SelectItem>
+                          <SelectItem value="Kredit">
+                            <span className="text-destructive font-medium">Kredit (Pengeluaran)</span>
+                          </SelectItem>
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
