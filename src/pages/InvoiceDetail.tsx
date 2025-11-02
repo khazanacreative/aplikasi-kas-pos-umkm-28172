@@ -65,7 +65,7 @@ const InvoiceDetail = () => {
         description: "Gagal memuat detail invoice",
         variant: "destructive",
       });
-      navigate("/invoice");
+      navigate("/pos?tab=invoice");
       return;
     }
 
@@ -199,7 +199,7 @@ const InvoiceDetail = () => {
           <div className="flex items-center justify-between">
             <Button
               variant="ghost"
-              onClick={() => navigate("/invoice")}
+              onClick={() => navigate("/pos?tab=invoice")}
               className="justify-start"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -352,29 +352,6 @@ const InvoiceDetail = () => {
           </Card>
         )}
 
-        {invoiceItems.length > 0 && (
-          <Card className="p-6 shadow-lg mb-6">
-            <h3 className="text-lg font-bold mb-4">Item Penjualan</h3>
-            <div className="space-y-2">
-              {invoiceItems.map((item, index) => (
-                <div
-                  key={item.id}
-                  className="flex justify-between items-center p-3 bg-muted/50 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-muted-foreground">
-                      {index + 1}.
-                    </span>
-                    <span className="font-medium">{item.nama_item}</span>
-                  </div>
-                  <span className="font-semibold text-primary">
-                    {item.jumlah} pcs
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
 
         {transactions.length > 0 && (
           <Card className="p-6 shadow-lg mb-6">

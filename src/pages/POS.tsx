@@ -230,7 +230,7 @@ const POS = () => {
       const branchId = userRole?.branch_id || null;
       
       // Always create invoice (branch_id can be null and synced later)
-      const { error: invoiceError } = await supabase.from("invoice").insert({
+      const { data: invoiceData, error: invoiceError } = await supabase.from("invoice").insert({
         branch_id: branchId,
         user_id: user?.id,
         nomor_invoice: invoiceNumber,
@@ -238,9 +238,21 @@ const POS = () => {
         pelanggan: customerName,
         nominal: totalAmount,
         status: "Lunas",
-      });
+      }).select().single();
 
       if (invoiceError) throw invoiceError;
+
+      // Create invoice items from cart
+      const invoiceItems = cart.map(item => ({
+        invoice_id: invoiceData.id,
+        nama_item: item.name,
+        jumlah: item.quantity,
+        harga_satuan: item.price,
+        subtotal: item.price * item.quantity,
+      }));
+
+      const { error: itemsError } = await supabase.from("invoice_items").insert(invoiceItems);
+      if (itemsError) throw itemsError;
 
       // Save to POS transactions and transaksi only if branch exists
       if (branchId) {
