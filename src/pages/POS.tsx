@@ -237,7 +237,7 @@ const POS = () => {
         tanggal: today,
         pelanggan: customerName,
         nominal: totalAmount,
-        status: "Belum Lunas",
+        status: "Lunas",
       }).select().single();
 
       if (invoiceError) throw invoiceError;
@@ -254,7 +254,7 @@ const POS = () => {
       const { error: itemsError } = await supabase.from("invoice_items").insert(invoiceItems);
       if (itemsError) throw itemsError;
 
-      // Save to POS transactions only if branch exists
+      // Save to POS transactions and transaksi only if branch exists
       if (branchId) {
         const { error: posError } = await supabase.from("pos_transaksi").insert({
           branch_id: branchId,
@@ -265,6 +265,19 @@ const POS = () => {
         });
 
         if (posError) throw posError;
+
+        // Save as transaksi (debet/pemasukan)
+        const { error: transaksiError } = await supabase.from("transaksi").insert({
+          branch_id: branchId,
+          user_id: user?.id,
+          tanggal: today,
+          keterangan: `Penjualan POS - ${posCode}`,
+          kategori: "Penjualan",
+          jenis: "Debet",
+          nominal: totalAmount,
+        });
+
+        if (transaksiError) throw transaksiError;
       }
 
       // Update product stock
