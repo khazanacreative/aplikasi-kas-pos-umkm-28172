@@ -142,37 +142,61 @@ const Reports = () => {
       return;
     }
 
-    // Prepare data for Excel
-    const exportData = transactions.map(t => ({
-      Tanggal: t.tanggal,
-      Keterangan: t.keterangan,
-      Kategori: t.kategori,
-      Jenis: t.jenis,
-      Nominal: t.nominal,
-    }));
+    // Sort transactions by date ascending for proper balance calculation
+    const sortedTransactions = [...transactions].sort((a, b) => 
+      new Date(a.tanggal).getTime() - new Date(b.tanggal).getTime()
+    );
+
+    // Prepare data with running balance
+    let runningBalance = 0;
+    const exportData = sortedTransactions.map((t, index) => {
+      const debet = t.jenis === "Debet" ? Number(t.nominal) : 0;
+      const kredit = t.jenis === "Kredit" ? Number(t.nominal) : 0;
+      runningBalance += debet - kredit;
+
+      return {
+        No: index + 1,
+        "Invoice/Tanggal": t.invoice_id ? `${t.invoice_id.substring(0, 8)}... / ${t.tanggal}` : t.tanggal,
+        Keterangan: t.keterangan,
+        Debet: debet || "",
+        Kredit: kredit || "",
+        Saldo: runningBalance,
+      };
+    });
 
     // Add summary rows
     exportData.push({} as any);
     exportData.push({
-      Tanggal: "RINGKASAN",
+      No: "",
+      "Invoice/Tanggal": "RINGKASAN",
       Keterangan: "",
-      Kategori: "",
-      Jenis: "Total Pemasukan",
-      Nominal: totalPemasukan,
+      Debet: "",
+      Kredit: "",
+      Saldo: "",
     } as any);
     exportData.push({
-      Tanggal: "",
-      Keterangan: "",
-      Kategori: "",
-      Jenis: "Total Pengeluaran",
-      Nominal: totalPengeluaran,
+      No: "",
+      "Invoice/Tanggal": "",
+      Keterangan: "Total Pemasukan",
+      Debet: totalPemasukan,
+      Kredit: "",
+      Saldo: "",
     } as any);
     exportData.push({
-      Tanggal: "",
-      Keterangan: "",
-      Kategori: "",
-      Jenis: "Selisih",
-      Nominal: selisih,
+      No: "",
+      "Invoice/Tanggal": "",
+      Keterangan: "Total Pengeluaran",
+      Debet: "",
+      Kredit: totalPengeluaran,
+      Saldo: "",
+    } as any);
+    exportData.push({
+      No: "",
+      "Invoice/Tanggal": "",
+      Keterangan: "Saldo Akhir",
+      Debet: "",
+      Kredit: "",
+      Saldo: selisih,
     } as any);
 
     const ws = XLSX.utils.json_to_sheet(exportData);

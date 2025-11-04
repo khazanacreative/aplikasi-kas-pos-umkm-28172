@@ -170,6 +170,33 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          alamat: string | null
+          created_at: string
+          id: string
+          nama_usaha: string | null
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          alamat?: string | null
+          created_at?: string
+          id: string
+          nama_usaha?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          alamat?: string | null
+          created_at?: string
+          id?: string
+          nama_usaha?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       transaksi: {
         Row: {
           branch_id: string | null

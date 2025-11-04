@@ -7,6 +7,8 @@ import { User, Store, MapPin, Phone, LogOut } from "lucide-react";
 import Header from "@/components/Header";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -21,12 +23,37 @@ const Profile = () => {
 
   // 🔹 State untuk kontrol read-only
   const [isReadOnly, setIsReadOnly] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");
     }
   }, [user, loading, navigate]);
+
+  // Fetch existing profile data
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user?.id) return;
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (data) {
+        setFormData({
+          namaUsaha: data.nama_usaha || "",
+          alamat: data.alamat || "",
+          whatsapp: data.whatsapp || "",
+        });
+        setIsReadOnly(true);
+      }
+    };
+
+    fetchProfile();
+  }, [user?.id]);
 
   const handleLogout = async () => {
     await signOut();
@@ -39,14 +66,37 @@ const Profile = () => {
     }));
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
 
-    // Simulasi penyimpanan data
-    console.log("Data disimpan:", formData);
+    if (!user?.id) return;
 
-    // Setelah disimpan, ubah menjadi read-only
-    setIsReadOnly(true);
+    setIsSaving(true);
+
+    const { error } = await supabase
+      .from("profiles")
+      .upsert({
+        id: user.id,
+        nama_usaha: formData.namaUsaha,
+        alamat: formData.alamat,
+        whatsapp: formData.whatsapp,
+      });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Gagal menyimpan data profil",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Berhasil",
+        description: "Data profil berhasil disimpan",
+      });
+      setIsReadOnly(true);
+    }
+
+    setIsSaving(false);
   };
 
   const handleEdit = () => {
@@ -152,8 +202,9 @@ const Profile = () => {
                 type="submit"
                 className="flex-1 py-6 text-lg font-semibold gradient-primary border-0"
                 size="lg"
+                disabled={isSaving}
               >
-                Simpan
+                {isSaving ? "Menyimpan..." : "Simpan"}
               </Button>
 
               {isReadOnly && (
