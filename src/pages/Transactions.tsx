@@ -36,6 +36,7 @@ const Transactions = () => {
   const { user, userRole, loading } = useAuth();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") || "tambah";
+  const prefilledInvoiceId = searchParams.get("invoice_id");
 
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -86,6 +87,25 @@ const Transactions = () => {
     }
 
     setInvoices(data || []);
+    
+    // Auto-fill form if invoice_id is in URL
+    if (prefilledInvoiceId && data) {
+      const selectedInvoice = data.find(inv => inv.id === prefilledInvoiceId);
+      if (selectedInvoice) {
+        setFormData({
+          tanggal: new Date().toISOString().split('T')[0],
+          keterangan: `Penjualan - ${selectedInvoice.pelanggan} (${selectedInvoice.nomor_invoice})`,
+          kategori: "Penjualan Tunai",
+          jenis: "Debet",
+          nominal: selectedInvoice.nominal.toString(),
+          invoice_id: prefilledInvoiceId,
+        });
+        toast({
+          title: "Invoice Dipilih",
+          description: `Data dari ${selectedInvoice.nomor_invoice} telah diisi otomatis`,
+        });
+      }
+    }
   };
 
   const fetchTransactions = async () => {

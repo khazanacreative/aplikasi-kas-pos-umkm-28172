@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Plus, Minus, Trash2, ShoppingCart, Upload, Package, FileText, Search, Edit, PlusCircle } from "lucide-react";
+import { ArrowLeft, Plus, Minus, Trash2, ShoppingCart, Upload, Package, FileText, Search, Edit, PlusCircle, Receipt } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -920,19 +920,35 @@ const POS = () => {
                       >
                         <CardContent className="p-4">
                           <div className="flex justify-between items-start mb-2">
-                            <div>
+                            <div className="flex-1">
                               <p className="font-semibold text-lg">{invoice.nomor_invoice}</p>
                               <p className="text-sm text-muted-foreground">{invoice.pelanggan}</p>
                             </div>
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                invoice.status === "Lunas"
-                                  ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-                                  : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
-                              }`}
-                            >
-                              {invoice.status}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                  invoice.status === "Lunas"
+                                    ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                                    : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
+                                }`}
+                              >
+                                {invoice.status}
+                              </span>
+                              {invoice.status === "Lunas" && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/transactions?tab=tambah&invoice_id=${invoice.id}`);
+                                  }}
+                                  className="gap-1"
+                                >
+                                  <Receipt className="h-3 w-3" />
+                                  Catat
+                                </Button>
+                              )}
+                            </div>
                           </div>
                           <div className="flex justify-between items-center">
                             <p className="text-sm text-muted-foreground">
