@@ -84,15 +84,37 @@ const POS = () => {
   const fetchInvoices = async () => {
     if (!user?.id) return;
     
-    const { data, error } = await supabase
+    const { data: invoicesData, error: invoicesError } = await supabase
       .from("invoice")
       .select("*")
       .eq("user_id", user.id)
       .order("tanggal", { ascending: false });
 
-    if (!error && data) {
-      setInvoices(data);
+    if (invoicesError) {
+      console.error("Error fetching invoices:", invoicesError);
+      return;
     }
+
+    // Check which invoices have been recorded in transactions
+    const { data: transactionsData, error: transactionsError } = await supabase
+      .from("transaksi")
+      .select("invoice_id")
+      .eq("user_id", user.id)
+      .not("invoice_id", "is", null);
+
+    if (transactionsError) {
+      console.error("Error fetching transactions:", transactionsError);
+    }
+
+    const recordedInvoiceIds = new Set(transactionsData?.map(t => t.invoice_id) || []);
+
+    // Update invoice status based on whether it's been recorded
+    const invoicesWithStatus = invoicesData?.map(invoice => ({
+      ...invoice,
+      status: recordedInvoiceIds.has(invoice.id) ? "Lunas" : "Belum Lunas"
+    })) || [];
+
+    setInvoices(invoicesWithStatus);
   };
 
   useEffect(() => {
@@ -256,7 +278,7 @@ const POS = () => {
         tanggal: today,
         pelanggan: customerName,
         nominal: totalAmount,
-        status: "Lunas",
+        status: "Belum Lunas",
       }).select().single();
 
       if (invoiceError) throw invoiceError;
@@ -934,7 +956,7 @@ const POS = () => {
                               >
                                 {invoice.status}
                               </span>
-                              {invoice.status === "Lunas" && (
+                              {invoice.status !== "Lunas" && (
                                 <Button
                                   size="sm"
                                   variant="outline"

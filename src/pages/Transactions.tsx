@@ -200,6 +200,14 @@ const Transactions = () => {
       description: "Transaksi berhasil ditambahkan!",
     });
 
+    // If this transaction was linked to an invoice, show success message
+    if (formData.invoice_id) {
+      toast({
+        title: "Invoice Tercatat",
+        description: "Invoice telah berubah status menjadi Lunas",
+      });
+    }
+
     setFilterDate(formData.tanggal);
     setFormData({
       tanggal: new Date().toISOString().split('T')[0],
