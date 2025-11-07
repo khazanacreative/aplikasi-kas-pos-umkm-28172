@@ -4,11 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Plus, Minus, Trash2, ShoppingCart, Upload, Package, FileText } from "lucide-react";
+import { ArrowLeft, Plus, Minus, Trash2, ShoppingCart, Upload, Package, FileText, Search, Edit, PlusCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import Header from "@/components/Header";
 import { useSearchParams } from "react-router-dom";
 import * as XLSX from "xlsx";
@@ -38,6 +40,23 @@ const POS = () => {
   const [productStock, setProductStock] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [invoices, setInvoices] = useState<any[]>([]);
+  
+  // Search & Pagination
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
+  // Edit Product Dialog
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editPrice, setEditPrice] = useState("");
+  const [editStock, setEditStock] = useState("");
+  
+  // Add Stock Dialog
+  const [addStockDialogOpen, setAddStockDialogOpen] = useState(false);
+  const [addStockProduct, setAddStockProduct] = useState<Product | null>(null);
+  const [addStockAmount, setAddStockAmount] = useState("");
 
   // Auth protection
   useEffect(() => {
@@ -316,6 +335,95 @@ const POS = () => {
     });
   };
 
+  const openEditDialog = (product: Product) => {
+    setEditingProduct(product);
+    setEditName(product.name);
+    setEditPrice(product.price.toString());
+    setEditStock(product.stock.toString());
+    setEditDialogOpen(true);
+  };
+
+  const saveEditProduct = () => {
+    if (!editingProduct || !editName || !editPrice || !editStock) {
+      toast({
+        title: "Error",
+        description: "Mohon isi semua field",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setProducts(products.map(p => 
+      p.id === editingProduct.id 
+        ? { ...p, name: editName, price: parseFloat(editPrice), stock: parseInt(editStock) }
+        : p
+    ));
+
+    toast({
+      title: "Produk Diperbarui",
+      description: `${editName} berhasil diperbarui`,
+    });
+
+    setEditDialogOpen(false);
+    setEditingProduct(null);
+  };
+
+  const openAddStockDialog = (product: Product) => {
+    setAddStockProduct(product);
+    setAddStockAmount("");
+    setAddStockDialogOpen(true);
+  };
+
+  const saveAddStock = () => {
+    if (!addStockProduct || !addStockAmount) {
+      toast({
+        title: "Error",
+        description: "Mohon isi jumlah stok",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const amount = parseInt(addStockAmount);
+    if (amount <= 0) {
+      toast({
+        title: "Error",
+        description: "Jumlah stok harus lebih dari 0",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setProducts(products.map(p => 
+      p.id === addStockProduct.id 
+        ? { ...p, stock: p.stock + amount }
+        : p
+    ));
+
+    toast({
+      title: "Stok Ditambahkan",
+      description: `${amount} stok berhasil ditambahkan ke ${addStockProduct.name}`,
+    });
+
+    setAddStockDialogOpen(false);
+    setAddStockProduct(null);
+  };
+
+  // Filter & Pagination
+  const filteredProducts = products.filter(p => 
+    p.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -418,34 +526,77 @@ const POS = () => {
             {/* Products Grid */}
             <Card>
               <CardHeader>
-                <CardTitle>Pilih Produk</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Pilih Produk</CardTitle>
+                  <div className="relative w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Cari produk..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                {products.length === 0 ? (
+                {filteredProducts.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">
-                    Belum ada produk. Tambahkan di tab Katalog.
+                    {searchQuery ? "Produk tidak ditemukan" : "Belum ada produk. Tambahkan di tab Katalog."}
                   </p>
                 ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {products.map((product) => (
-                      <Card 
-                        key={product.id} 
-                        className="cursor-pointer hover:shadow-md transition-shadow"
-                        onClick={() => addToCart(product)}
-                      >
-                        <CardContent className="p-4 text-center">
-                          <Package className="h-12 w-12 mx-auto mb-2 text-primary" />
-                          <p className="font-medium mb-1">{product.name}</p>
-                          <p className="text-sm text-muted-foreground mb-1">
-                            Rp {product.price.toLocaleString("id-ID")}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Stok: {product.stock}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                  <>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {paginatedProducts.map((product) => (
+                        <Card 
+                          key={product.id} 
+                          className="cursor-pointer hover:shadow-md transition-shadow"
+                          onClick={() => addToCart(product)}
+                        >
+                          <CardContent className="p-4 text-center">
+                            <Package className="h-12 w-12 mx-auto mb-2 text-primary" />
+                            <p className="font-medium mb-1 line-clamp-2">{product.name}</p>
+                            <p className="text-sm text-muted-foreground mb-1">
+                              Rp {product.price.toLocaleString("id-ID")}
+                            </p>
+                            <p className={`text-xs font-medium ${product.stock < 10 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                              Stok: {product.stock}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                    
+                    {totalPages > 1 && (
+                      <Pagination className="mt-6">
+                        <PaginationContent>
+                          <PaginationItem>
+                            <PaginationPrevious 
+                              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                              className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            />
+                          </PaginationItem>
+                          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                            <PaginationItem key={page}>
+                              <PaginationLink
+                                onClick={() => setCurrentPage(page)}
+                                isActive={currentPage === page}
+                                className="cursor-pointer"
+                              >
+                                {page}
+                              </PaginationLink>
+                            </PaginationItem>
+                          ))}
+                          <PaginationItem>
+                            <PaginationNext 
+                              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                              className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            />
+                          </PaginationItem>
+                        </PaginationContent>
+                      </Pagination>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -551,34 +702,198 @@ const POS = () => {
             {/* Products List */}
             <Card>
               <CardHeader>
-                <CardTitle>Daftar Produk ({products.length})</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Daftar Produk ({filteredProducts.length})</CardTitle>
+                  <div className="relative w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Cari produk..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                {products.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">Belum ada produk</p>
+                {filteredProducts.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    {searchQuery ? "Produk tidak ditemukan" : "Belum ada produk"}
+                  </p>
                 ) : (
-                  <div className="space-y-2">
-                    {products.map((product) => (
-                      <div key={product.id} className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                        <div className="flex-1">
-                          <p className="font-medium">{product.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Rp {product.price.toLocaleString("id-ID")} • Stok: {product.stock}
-                          </p>
-                        </div>
-                        <Button
-                          size="icon"
-                          variant="destructive"
-                          onClick={() => deleteProduct(product.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
+                  <>
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Nama Produk</TableHead>
+                            <TableHead className="text-right">Harga</TableHead>
+                            <TableHead className="text-right">Stok</TableHead>
+                            <TableHead className="text-right">Aksi</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {paginatedProducts.map((product) => (
+                            <TableRow key={product.id}>
+                              <TableCell className="font-medium">{product.name}</TableCell>
+                              <TableCell className="text-right">
+                                Rp {product.price.toLocaleString("id-ID")}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <span className={product.stock < 10 ? "text-destructive font-semibold" : ""}>
+                                  {product.stock}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <Button
+                                    size="icon"
+                                    variant="outline"
+                                    onClick={() => openAddStockDialog(product)}
+                                    title="Tambah Stok"
+                                  >
+                                    <PlusCircle className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="outline"
+                                    onClick={() => openEditDialog(product)}
+                                    title="Edit Produk"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="destructive"
+                                    onClick={() => deleteProduct(product.id)}
+                                    title="Hapus Produk"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    
+                    {totalPages > 1 && (
+                      <Pagination className="mt-6">
+                        <PaginationContent>
+                          <PaginationItem>
+                            <PaginationPrevious 
+                              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                              className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            />
+                          </PaginationItem>
+                          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                            <PaginationItem key={page}>
+                              <PaginationLink
+                                onClick={() => setCurrentPage(page)}
+                                isActive={currentPage === page}
+                                className="cursor-pointer"
+                              >
+                                {page}
+                              </PaginationLink>
+                            </PaginationItem>
+                          ))}
+                          <PaginationItem>
+                            <PaginationNext 
+                              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                              className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            />
+                          </PaginationItem>
+                        </PaginationContent>
+                      </Pagination>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
+            
+            {/* Edit Product Dialog */}
+            <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Edit Produk</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Nama Produk</label>
+                    <Input
+                      placeholder="Nama produk"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Harga</label>
+                    <Input
+                      type="number"
+                      placeholder="Harga"
+                      value={editPrice}
+                      onChange={(e) => setEditPrice(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Stok</label>
+                    <Input
+                      type="number"
+                      placeholder="Stok"
+                      value={editStock}
+                      onChange={(e) => setEditStock(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={saveEditProduct} className="flex-1">
+                      Simpan Perubahan
+                    </Button>
+                    <Button variant="outline" onClick={() => setEditDialogOpen(false)} className="flex-1">
+                      Batal
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+            
+            {/* Add Stock Dialog */}
+            <Dialog open={addStockDialogOpen} onOpenChange={setAddStockDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Tambah Stok</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  {addStockProduct && (
+                    <div className="p-4 bg-muted rounded-lg">
+                      <p className="font-medium">{addStockProduct.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Stok saat ini: {addStockProduct.stock}
+                      </p>
+                    </div>
+                  )}
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Jumlah Stok Ditambahkan</label>
+                    <Input
+                      type="number"
+                      placeholder="Contoh: 50"
+                      value={addStockAmount}
+                      onChange={(e) => setAddStockAmount(e.target.value)}
+                      min="1"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={saveAddStock} className="flex-1">
+                      <PlusCircle className="h-4 w-4 mr-2" />
+                      Tambah Stok
+                    </Button>
+                    <Button variant="outline" onClick={() => setAddStockDialogOpen(false)} className="flex-1">
+                      Batal
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* Invoice Tab */}
