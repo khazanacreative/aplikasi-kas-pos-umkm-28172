@@ -238,11 +238,11 @@ const Reports = () => {
     exportData.push({} as any);
     exportData.push({
       No: "",
-      "Invoice/Tanggal": "RINGKASAN",
-      Keterangan: `Total Pemasukan: ${formatCurrency(totalPemasukan)} | Total Pengeluaran: ${formatCurrency(totalPengeluaran)} | Saldo Akhir: ${formatCurrency(selisih)}`,
-      Debet: "",
-      Kredit: "",
-      Saldo: "",
+      "Invoice/Tanggal": "",
+      Keterangan: "TOTAL",
+      Debet: totalPemasukan,
+      Kredit: totalPengeluaran,
+      Saldo: selisih,
     } as any);
 
     const ws = XLSX.utils.json_to_sheet(exportData);
