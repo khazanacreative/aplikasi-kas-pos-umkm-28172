@@ -10,6 +10,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Reports = () => {
   const navigate = useNavigate();
@@ -20,6 +22,7 @@ const Reports = () => {
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [periodFilter, setPeriodFilter] = useState<"weekly" | "monthly" | "yearly">("monthly");
 
   // Define fetchTransactions before using it in useEffect
   const fetchTransactions = async () => {
@@ -89,23 +92,90 @@ const Reports = () => {
   
   const selisih = totalPemasukan - totalPengeluaran;
 
-  // Group by month
-  const monthlyData = transactions.reduce((acc: any[], t) => {
-    const month = new Date(t.tanggal).toLocaleString('id-ID', { month: 'short' });
-    const existing = acc.find(m => m.bulan === month);
+  // Group by day for daily chart
+  const dailyData = transactions.reduce((acc: any[], t) => {
+    const date = new Date(t.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+    const existing = acc.find(m => m.periode === date);
     
     if (existing) {
       if (t.jenis === "Debet") existing.pemasukan += Number(t.nominal);
       if (t.jenis === "Kredit") existing.pengeluaran += Number(t.nominal);
     } else {
       acc.push({
-        bulan: month,
+        periode: date,
         pemasukan: t.jenis === "Debet" ? Number(t.nominal) : 0,
         pengeluaran: t.jenis === "Kredit" ? Number(t.nominal) : 0,
       });
     }
     return acc;
-  }, []).slice(0, 3);
+  }, []).slice(-7);
+
+  // Group by week
+  const weeklyData = transactions.reduce((acc: any[], t) => {
+    const date = new Date(t.tanggal);
+    const weekStart = new Date(date.setDate(date.getDate() - date.getDay()));
+    const weekLabel = weekStart.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+    const existing = acc.find(m => m.periode === weekLabel);
+    
+    if (existing) {
+      if (t.jenis === "Debet") existing.pemasukan += Number(t.nominal);
+      if (t.jenis === "Kredit") existing.pengeluaran += Number(t.nominal);
+    } else {
+      acc.push({
+        periode: weekLabel,
+        pemasukan: t.jenis === "Debet" ? Number(t.nominal) : 0,
+        pengeluaran: t.jenis === "Kredit" ? Number(t.nominal) : 0,
+      });
+    }
+    return acc;
+  }, []);
+
+  // Group by month
+  const monthlyData = transactions.reduce((acc: any[], t) => {
+    const month = new Date(t.tanggal).toLocaleString('id-ID', { month: 'short', year: 'numeric' });
+    const existing = acc.find(m => m.periode === month);
+    
+    if (existing) {
+      if (t.jenis === "Debet") existing.pemasukan += Number(t.nominal);
+      if (t.jenis === "Kredit") existing.pengeluaran += Number(t.nominal);
+    } else {
+      acc.push({
+        periode: month,
+        pemasukan: t.jenis === "Debet" ? Number(t.nominal) : 0,
+        pengeluaran: t.jenis === "Kredit" ? Number(t.nominal) : 0,
+      });
+    }
+    return acc;
+  }, []);
+
+  // Group by year
+  const yearlyData = transactions.reduce((acc: any[], t) => {
+    const year = new Date(t.tanggal).getFullYear().toString();
+    const existing = acc.find(m => m.periode === year);
+    
+    if (existing) {
+      if (t.jenis === "Debet") existing.pemasukan += Number(t.nominal);
+      if (t.jenis === "Kredit") existing.pengeluaran += Number(t.nominal);
+    } else {
+      acc.push({
+        periode: year,
+        pemasukan: t.jenis === "Debet" ? Number(t.nominal) : 0,
+        pengeluaran: t.jenis === "Kredit" ? Number(t.nominal) : 0,
+      });
+    }
+    return acc;
+  }, []);
+
+  const getFilteredData = () => {
+    switch (periodFilter) {
+      case "weekly":
+        return weeklyData;
+      case "yearly":
+        return yearlyData;
+      default:
+        return monthlyData;
+    }
+  };
 
   // Group by category
   const kategoriData = transactions.reduce((acc: any[], t) => {
@@ -264,80 +334,83 @@ const Reports = () => {
           <Card className="p-4 shadow-card">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="h-5 w-5 text-success" />
-              <p className="text-sm text-muted-foreground">Total Pemasukan</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Total Pemasukan</p>
             </div>
-            <h3 className="text-xl font-bold text-success">{formatCurrency(totalPemasukan)}</h3>
+            <h3 className="text-base sm:text-xl font-bold text-success break-words">{formatCurrency(totalPemasukan)}</h3>
           </Card>
 
           <Card className="p-4 shadow-card">
             <div className="flex items-center gap-2 mb-2">
               <TrendingDown className="h-5 w-5 text-destructive" />
-              <p className="text-sm text-muted-foreground">Total Pengeluaran</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Total Pengeluaran</p>
             </div>
-            <h3 className="text-xl font-bold text-destructive">{formatCurrency(totalPengeluaran)}</h3>
+            <h3 className="text-base sm:text-xl font-bold text-destructive break-words">{formatCurrency(totalPengeluaran)}</h3>
           </Card>
 
           <Card className="p-4 shadow-card gradient-card">
             <div className="flex items-center gap-2 mb-2">
               <BarChart3 className="h-5 w-5 text-primary" />
-              <p className="text-sm text-muted-foreground">Selisih</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Selisih</p>
             </div>
-            <h3 className={`text-xl font-bold ${selisih >= 0 ? 'text-success' : 'text-destructive'}`}>
+            <h3 className={`text-base sm:text-xl font-bold break-words ${selisih >= 0 ? 'text-success' : 'text-destructive'}`}>
               {formatCurrency(selisih)}
             </h3>
           </Card>
         </div>
 
-        {/* Monthly Chart */}
+        {/* Daily Bar Chart */}
         <Card className="p-5 shadow-lg mb-6">
           <h3 className="font-semibold mb-4 flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-primary" />
-            Grafik Bulanan
+            Grafik Harian (7 Hari Terakhir)
           </h3>
           
-          <div className="space-y-4">
-            {monthlyData.map((data, index) => {
-              const maxValue = Math.max(...monthlyData.map(d => Math.max(d.pemasukan, d.pengeluaran)));
-              const pemasukanWidth = (data.pemasukan / maxValue) * 100;
-              const pengeluaranWidth = (data.pengeluaran / maxValue) * 100;
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={dailyData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="periode" />
+              <YAxis />
+              <Tooltip 
+                formatter={(value: number) => formatCurrency(value)}
+                contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+              />
+              <Legend />
+              <Bar dataKey="pemasukan" fill="hsl(var(--success))" name="Pemasukan" />
+              <Bar dataKey="pengeluaran" fill="hsl(var(--destructive))" name="Pengeluaran" />
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
 
-              return (
-                <div key={index} className="space-y-2">
-                  <p className="text-sm font-medium">{data.bulan}</p>
-                  
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <div className="w-20 text-xs text-muted-foreground">Masuk</div>
-                      <div className="flex-1 bg-muted rounded-full h-6 overflow-hidden">
-                        <div 
-                          className="bg-success h-full flex items-center justify-end pr-2 transition-all"
-                          style={{ width: `${pemasukanWidth}%` }}
-                        >
-                          <span className="text-xs text-white font-medium">
-                            {formatCurrency(data.pemasukan)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <div className="w-20 text-xs text-muted-foreground">Keluar</div>
-                      <div className="flex-1 bg-muted rounded-full h-6 overflow-hidden">
-                        <div 
-                          className="bg-destructive h-full flex items-center justify-end pr-2 transition-all"
-                          style={{ width: `${pengeluaranWidth}%` }}
-                        >
-                          <span className="text-xs text-white font-medium">
-                            {formatCurrency(data.pengeluaran)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+        {/* Filtered Bar Chart */}
+        <Card className="p-5 shadow-lg mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
+            <h3 className="font-semibold flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              Grafik Per Periode
+            </h3>
+            <Tabs value={periodFilter} onValueChange={(v) => setPeriodFilter(v as any)} className="w-full sm:w-auto">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="weekly" className="text-xs sm:text-sm">Mingguan</TabsTrigger>
+                <TabsTrigger value="monthly" className="text-xs sm:text-sm">Bulanan</TabsTrigger>
+                <TabsTrigger value="yearly" className="text-xs sm:text-sm">Tahunan</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
+          
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={getFilteredData()}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="periode" />
+              <YAxis />
+              <Tooltip 
+                formatter={(value: number) => formatCurrency(value)}
+                contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+              />
+              <Legend />
+              <Bar dataKey="pemasukan" fill="hsl(var(--success))" name="Pemasukan" />
+              <Bar dataKey="pengeluaran" fill="hsl(var(--destructive))" name="Pengeluaran" />
+            </BarChart>
+          </ResponsiveContainer>
         </Card>
 
         {/* Category Breakdown */}
@@ -347,9 +420,9 @@ const Reports = () => {
           <div className="space-y-4">
             {kategoriBelanja.map((item, index) => (
               <div key={index}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">{item.kategori}</span>
-                  <span className="text-sm font-bold">{formatCurrency(item.jumlah)}</span>
+                <div className="flex items-center justify-between mb-2 gap-2">
+                  <span className="text-xs sm:text-sm font-medium truncate">{item.kategori}</span>
+                  <span className="text-xs sm:text-sm font-bold whitespace-nowrap">{formatCurrency(item.jumlah)}</span>
                 </div>
                 <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                   <div 
@@ -365,10 +438,10 @@ const Reports = () => {
         {/* Export Button */}
         <Button
           onClick={handleExport}
-          className="w-full py-6 text-lg font-semibold gradient-secondary border-0 shadow-md"
+          className="w-full py-5 sm:py-6 text-base sm:text-lg font-semibold gradient-secondary border-0 shadow-md"
           size="lg"
         >
-          <Download className="h-5 w-5 mr-2" />
+          <Download className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
           Export ke Excel
         </Button>
       </main>
