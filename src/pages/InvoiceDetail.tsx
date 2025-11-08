@@ -149,18 +149,26 @@ const InvoiceDetail = () => {
     const { default: jsPDF } = await import("jspdf");
     const { default: html2canvas } = await import("html2canvas");
 
-    const element = document.getElementById("invoice-content");
+    const element = document.getElementById("invoice-pdf-template");
     if (!element || !invoice) return;
+
+    // Temporarily show the hidden PDF template
+    element.style.display = "block";
 
     try {
       const canvas = await html2canvas(element, {
-        scale: 1.5,
+        scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff",
+        width: 800,
+        windowWidth: 800,
       });
 
-      const imgData = canvas.toDataURL("image/jpeg", 0.7);
+      // Hide the template again
+      element.style.display = "none";
+
+      const imgData = canvas.toDataURL("image/jpeg", 0.8);
       const pdf = new jsPDF("p", "mm", "a4");
       const imgWidth = 210;
       const pageHeight = 297;
@@ -185,6 +193,7 @@ const InvoiceDetail = () => {
         description: "Invoice berhasil diunduh sebagai PDF",
       });
     } catch (error) {
+      element.style.display = "none";
       toast({
         title: "Error",
         description: "Gagal mengunduh PDF",
@@ -239,6 +248,107 @@ const InvoiceDetail = () => {
           </div>
         </Card>
 
+        {/* Hidden PDF Template - Desktop Layout */}
+        <div id="invoice-pdf-template" style={{ display: "none", width: "800px", padding: "40px", backgroundColor: "#ffffff" }}>
+          <div style={{ marginBottom: "30px", borderBottom: "2px solid #e5e7eb", paddingBottom: "20px" }}>
+            <h1 style={{ fontSize: "32px", fontWeight: "bold", marginBottom: "8px", color: "#1a1a1a" }}>{invoice.nomor_invoice}</h1>
+            <span style={{ 
+              display: "inline-block", 
+              fontSize: "14px", 
+              padding: "6px 16px", 
+              borderRadius: "20px",
+              backgroundColor: invoice.status === "Lunas" ? "#dcfce7" : "#fef3c7",
+              color: invoice.status === "Lunas" ? "#16a34a" : "#ca8a04",
+              fontWeight: "600"
+            }}>
+              {invoice.status}
+            </span>
+          </div>
+
+          <div style={{ marginBottom: "30px" }}>
+            <div style={{ marginBottom: "20px" }}>
+              <p style={{ fontSize: "14px", color: "#6b7280", marginBottom: "4px" }}>Pelanggan</p>
+              <p style={{ fontSize: "20px", fontWeight: "600", color: "#1a1a1a" }}>{invoice.pelanggan}</p>
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+              <p style={{ fontSize: "14px", color: "#6b7280", marginBottom: "4px" }}>Tanggal Invoice</p>
+              <p style={{ fontSize: "16px", fontWeight: "600", color: "#1a1a1a" }}>
+                {new Date(invoice.tanggal).toLocaleDateString("id-ID", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+              <p style={{ fontSize: "14px", color: "#6b7280", marginBottom: "4px" }}>Nominal</p>
+              <p style={{ fontSize: "28px", fontWeight: "bold", color: "#7c3aed" }}>
+                {formatCurrency(invoice.nominal)}
+              </p>
+            </div>
+          </div>
+
+          {invoiceItems.length > 0 && (
+            <div style={{ marginTop: "30px", borderTop: "2px solid #e5e7eb", paddingTop: "20px" }}>
+              <h3 style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "16px", color: "#1a1a1a" }}>Detail Item Penjualan</h3>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
+                    <th style={{ textAlign: "left", padding: "12px 8px", fontSize: "14px", fontWeight: "600", color: "#6b7280" }}>Nama Item</th>
+                    <th style={{ textAlign: "right", padding: "12px 8px", fontSize: "14px", fontWeight: "600", color: "#6b7280" }}>Jumlah</th>
+                    <th style={{ textAlign: "right", padding: "12px 8px", fontSize: "14px", fontWeight: "600", color: "#6b7280" }}>Harga Satuan</th>
+                    <th style={{ textAlign: "right", padding: "12px 8px", fontSize: "14px", fontWeight: "600", color: "#6b7280" }}>Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoiceItems.map((item) => (
+                    <tr key={item.id} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                      <td style={{ padding: "12px 8px" }}>
+                        <p style={{ fontWeight: "500", color: "#1a1a1a" }}>{item.nama_item}</p>
+                        {item.keterangan && (
+                          <p style={{ fontSize: "14px", color: "#6b7280" }}>{item.keterangan}</p>
+                        )}
+                      </td>
+                      <td style={{ textAlign: "right", padding: "12px 8px", fontWeight: "500", color: "#1a1a1a" }}>{item.jumlah}</td>
+                      <td style={{ textAlign: "right", padding: "12px 8px", color: "#1a1a1a" }}>{formatCurrency(item.harga_satuan)}</td>
+                      <td style={{ textAlign: "right", padding: "12px 8px", fontWeight: "bold", color: "#7c3aed" }}>{formatCurrency(item.subtotal)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr style={{ borderTop: "2px solid #e5e7eb" }}>
+                    <td colSpan={3} style={{ textAlign: "right", padding: "12px 8px", fontWeight: "bold", color: "#1a1a1a" }}>Total:</td>
+                    <td style={{ textAlign: "right", padding: "12px 8px", fontWeight: "bold", fontSize: "20px", color: "#7c3aed" }}>
+                      {formatCurrency(invoice.nominal)}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+
+          <div style={{ marginTop: "40px", paddingTop: "20px", borderTop: "1px solid #e5e7eb" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", fontSize: "14px" }}>
+              <div>
+                <p style={{ color: "#6b7280", marginBottom: "4px" }}>Dibuat pada</p>
+                <p style={{ fontWeight: "500", color: "#1a1a1a" }}>
+                  {new Date(invoice.created_at).toLocaleString("id-ID")}
+                </p>
+              </div>
+              <div>
+                <p style={{ color: "#6b7280", marginBottom: "4px" }}>Terakhir diubah</p>
+                <p style={{ fontWeight: "500", color: "#1a1a1a" }}>
+                  {new Date(invoice.updated_at).toLocaleString("id-ID")}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Visible Invoice Content - Responsive */}
         <div id="invoice-content">
           <Card className="p-6 shadow-lg mb-6">
             <div className="flex items-center justify-between mb-6">
