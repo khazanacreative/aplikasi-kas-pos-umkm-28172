@@ -234,39 +234,15 @@ const Reports = () => {
       };
     });
 
-    // Add summary rows
+    // Add summary row
     exportData.push({} as any);
     exportData.push({
       No: "",
       "Invoice/Tanggal": "RINGKASAN",
-      Keterangan: "",
+      Keterangan: `Total Pemasukan: ${formatCurrency(totalPemasukan)} | Total Pengeluaran: ${formatCurrency(totalPengeluaran)} | Saldo Akhir: ${formatCurrency(selisih)}`,
       Debet: "",
       Kredit: "",
       Saldo: "",
-    } as any);
-    exportData.push({
-      No: "",
-      "Invoice/Tanggal": "",
-      Keterangan: "Total Pemasukan",
-      Debet: totalPemasukan,
-      Kredit: "",
-      Saldo: "",
-    } as any);
-    exportData.push({
-      No: "",
-      "Invoice/Tanggal": "",
-      Keterangan: "Total Pengeluaran",
-      Debet: "",
-      Kredit: totalPengeluaran,
-      Saldo: "",
-    } as any);
-    exportData.push({
-      No: "",
-      "Invoice/Tanggal": "",
-      Keterangan: "Saldo Akhir",
-      Debet: "",
-      Kredit: "",
-      Saldo: selisih,
     } as any);
 
     const ws = XLSX.utils.json_to_sheet(exportData);

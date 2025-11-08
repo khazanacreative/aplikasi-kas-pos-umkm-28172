@@ -941,14 +941,14 @@ const POS = () => {
                         className="border-l-4 border-l-primary cursor-pointer hover:shadow-md transition-shadow"
                       >
                         <CardContent className="p-4">
-                          <div className="flex justify-between items-start mb-2">
-                            <div className="flex-1">
-                              <p className="font-semibold text-lg">{invoice.nomor_invoice}</p>
-                              <p className="text-sm text-muted-foreground">{invoice.pelanggan}</p>
+                          <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-base sm:text-lg truncate">{invoice.nomor_invoice}</p>
+                              <p className="text-xs sm:text-sm text-muted-foreground truncate">{invoice.pelanggan}</p>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-shrink-0">
                               <span
-                                className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
                                   invoice.status === "Lunas"
                                     ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
                                     : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
@@ -964,23 +964,24 @@ const POS = () => {
                                     e.stopPropagation();
                                     navigate(`/transactions?tab=tambah&invoice_id=${invoice.id}`);
                                   }}
-                                  className="gap-1"
+                                  className="gap-1 whitespace-nowrap"
                                 >
                                   <Receipt className="h-3 w-3" />
-                                  Catat
+                                  <span className="hidden xs:inline">Catat</span>
+                                  <span className="inline xs:hidden">📝</span>
                                 </Button>
                               )}
                             </div>
                           </div>
-                          <div className="flex justify-between items-center">
-                            <p className="text-sm text-muted-foreground">
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                            <p className="text-xs sm:text-sm text-muted-foreground">
                               {new Date(invoice.tanggal).toLocaleDateString("id-ID", {
                                 day: "numeric",
                                 month: "long",
                                 year: "numeric",
                               })}
                             </p>
-                            <p className="text-xl font-bold text-primary">
+                            <p className="text-lg sm:text-xl font-bold text-primary break-words">
                               Rp {invoice.nominal.toLocaleString("id-ID")}
                             </p>
                           </div>
