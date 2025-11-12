@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Calendar, Plus, History, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
@@ -42,6 +43,8 @@ const Transactions = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filterDate, setFilterDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [transactionPage, setTransactionPage] = useState(1);
+  const transactionItemsPerPage = 5;
   const [formData, setFormData] = useState({
     tanggal: new Date().toISOString().split('T')[0],
     keterangan: "",
@@ -71,6 +74,7 @@ const Transactions = () => {
   useEffect(() => {
     if (user) {
       fetchTransactions();
+      setTransactionPage(1);
     }
   }, [filterDate]);
 
@@ -450,8 +454,12 @@ const Transactions = () => {
                   <p>Tidak ada transaksi pada tanggal {new Date(filterDate).toLocaleDateString('id-ID')}</p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {transactions.map((transaction) => (
+                <>
+                  <div className="space-y-4">
+                    {transactions.slice(
+                      (transactionPage - 1) * transactionItemsPerPage,
+                      transactionPage * transactionItemsPerPage
+                    ).map((transaction) => (
                     <Card 
                       key={transaction.id} 
                       className="p-4 hover:shadow-md transition-shadow cursor-pointer"
@@ -492,7 +500,39 @@ const Transactions = () => {
                       </div>
                     </Card>
                   ))}
-                </div>
+                  </div>
+
+                  {/* Transaction Pagination */}
+                  {transactions.length > transactionItemsPerPage && (
+                    <Pagination className="mt-6">
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            onClick={() => setTransactionPage(p => Math.max(1, p - 1))}
+                            className={transactionPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                        {Array.from({ length: Math.ceil(transactions.length / transactionItemsPerPage) }, (_, i) => i + 1).map(page => (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              onClick={() => setTransactionPage(page)}
+                              isActive={transactionPage === page}
+                              className="cursor-pointer"
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        ))}
+                        <PaginationItem>
+                          <PaginationNext 
+                            onClick={() => setTransactionPage(p => Math.min(Math.ceil(transactions.length / transactionItemsPerPage), p + 1))}
+                            className={transactionPage === Math.ceil(transactions.length / transactionItemsPerPage) ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  )}
+                </>
               )}
             </Card>
           </TabsContent>

@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Plus, Minus, Trash2, ShoppingCart, Upload, Package, FileText, Search, Edit, PlusCircle, Receipt } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, Plus, Minus, Trash2, ShoppingCart, Upload, Package, FileText, Search, Edit, PlusCircle, Receipt, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -46,6 +47,11 @@ const POS = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   
+  // Invoice Pagination & Filter
+  const [invoicePage, setInvoicePage] = useState(1);
+  const [invoiceFilterDate, setInvoiceFilterDate] = useState<string>("");
+  const invoiceItemsPerPage = 5;
+  
   // Edit Product Dialog
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -84,11 +90,17 @@ const POS = () => {
   const fetchInvoices = async () => {
     if (!user?.id) return;
     
-    const { data: invoicesData, error: invoicesError } = await supabase
+    let query = supabase
       .from("invoice")
       .select("*")
       .eq("user_id", user.id)
       .order("tanggal", { ascending: false });
+    
+    if (invoiceFilterDate) {
+      query = query.eq("tanggal", invoiceFilterDate);
+    }
+    
+    const { data: invoicesData, error: invoicesError } = await query;
 
     if (invoicesError) {
       console.error("Error fetching invoices:", invoicesError);
@@ -119,7 +131,7 @@ const POS = () => {
 
   useEffect(() => {
     fetchInvoices();
-  }, [user?.id]);
+  }, [user?.id, invoiceFilterDate]);
 
   const addProduct = () => {
     if (!productName || !productPrice || !productStock) {
@@ -920,13 +932,50 @@ const POS = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                {/* Date Filter */}
+                <div className="space-y-2 mb-6">
+                  <Label htmlFor="invoiceFilterDate" className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Filter Tanggal (Opsional)
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="invoiceFilterDate"
+                      type="date"
+                      value={invoiceFilterDate}
+                      onChange={(e) => {
+                        setInvoiceFilterDate(e.target.value);
+                        setInvoicePage(1);
+                      }}
+                      className="flex-1"
+                    />
+                    {invoiceFilterDate && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setInvoiceFilterDate("");
+                          setInvoicePage(1);
+                        }}
+                      >
+                        Reset
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
                 {invoices.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">
-                    Belum ada invoice yang dibuat
+                    {invoiceFilterDate 
+                      ? `Tidak ada invoice pada tanggal ${new Date(invoiceFilterDate).toLocaleDateString('id-ID')}`
+                      : "Belum ada invoice yang dibuat"}
                   </p>
                 ) : (
-                  <div className="space-y-3">
-                    {invoices.map((invoice) => (
+                  <>
+                    <div className="space-y-3">
+                      {invoices.slice(
+                        (invoicePage - 1) * invoiceItemsPerPage,
+                        invoicePage * invoiceItemsPerPage
+                      ).map((invoice) => (
                       <Card
                         key={invoice.id}
                         onClick={() => navigate(`/invoice/${invoice.id}`)}
@@ -980,8 +1029,39 @@ const POS = () => {
                         </CardContent>
                       </Card>
                     ))}
+                    </div>
 
-                  </div>
+                    {/* Invoice Pagination */}
+                    {invoices.length > invoiceItemsPerPage && (
+                      <Pagination className="mt-6">
+                        <PaginationContent>
+                          <PaginationItem>
+                            <PaginationPrevious 
+                              onClick={() => setInvoicePage(p => Math.max(1, p - 1))}
+                              className={invoicePage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            />
+                          </PaginationItem>
+                          {Array.from({ length: Math.ceil(invoices.length / invoiceItemsPerPage) }, (_, i) => i + 1).map(page => (
+                            <PaginationItem key={page}>
+                              <PaginationLink
+                                onClick={() => setInvoicePage(page)}
+                                isActive={invoicePage === page}
+                                className="cursor-pointer"
+                              >
+                                {page}
+                              </PaginationLink>
+                            </PaginationItem>
+                          ))}
+                          <PaginationItem>
+                            <PaginationNext 
+                              onClick={() => setInvoicePage(p => Math.min(Math.ceil(invoices.length / invoiceItemsPerPage), p + 1))}
+                              className={invoicePage === Math.ceil(invoices.length / invoiceItemsPerPage) ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            />
+                          </PaginationItem>
+                        </PaginationContent>
+                      </Pagination>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
