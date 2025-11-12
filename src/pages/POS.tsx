@@ -44,7 +44,9 @@ const POS = () => {
   // Search & Pagination
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [invoiceCurrentPage, setInvoiceCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const invoiceItemsPerPage = 5;
   
   // Edit Product Dialog
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -925,8 +927,9 @@ const POS = () => {
                     Belum ada invoice yang dibuat
                   </p>
                 ) : (
-                  <div className="space-y-3">
-                    {invoices.map((invoice) => (
+                  <>
+                    <div className="space-y-3">
+                      {invoices.slice((invoiceCurrentPage - 1) * invoiceItemsPerPage, invoiceCurrentPage * invoiceItemsPerPage).map((invoice) => (
                       <Card
                         key={invoice.id}
                         onClick={() => navigate(`/invoice/${invoice.id}`)}
@@ -980,8 +983,38 @@ const POS = () => {
                         </CardContent>
                       </Card>
                     ))}
-
                   </div>
+                  
+                  {invoices.length > invoiceItemsPerPage && (
+                    <Pagination className="mt-6">
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            onClick={() => setInvoiceCurrentPage(p => Math.max(1, p - 1))}
+                            className={invoiceCurrentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                        {Array.from({ length: Math.ceil(invoices.length / invoiceItemsPerPage) }, (_, i) => i + 1).map(page => (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              onClick={() => setInvoiceCurrentPage(page)}
+                              isActive={invoiceCurrentPage === page}
+                              className="cursor-pointer"
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        ))}
+                        <PaginationItem>
+                          <PaginationNext 
+                            onClick={() => setInvoiceCurrentPage(p => Math.min(Math.ceil(invoices.length / invoiceItemsPerPage), p + 1))}
+                            className={invoiceCurrentPage === Math.ceil(invoices.length / invoiceItemsPerPage) ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  )}
+                </>
                 )}
               </CardContent>
             </Card>

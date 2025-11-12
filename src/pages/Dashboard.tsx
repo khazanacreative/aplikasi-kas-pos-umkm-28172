@@ -51,23 +51,26 @@ const Dashboard = () => {
     }
   }, [user, userRole]);
 
-  // Fetch transactions for dashboard statistics
+  // Fetch transactions for dashboard statistics (today only)
   useEffect(() => {
     if (!user?.id) return;
 
     const fetchDashboardData = async () => {
+      const today = new Date().toISOString().split('T')[0];
+
       let transQuery = supabase
         .from("transaksi")
         .select("*")
         .eq("user_id", user.id)
-        .order("tanggal", { ascending: false });
+        .eq("tanggal", today)
+        .order("created_at", { ascending: false });
 
       let invoiceQuery = supabase
         .from("invoice")
         .select("*")
         .eq("user_id", user.id)
         .order("tanggal", { ascending: false })
-        .limit(3);
+        .limit(5);
 
       // Filter by branch if user has one
       if (userRole?.branch_id) {
@@ -81,7 +84,7 @@ const Dashboard = () => {
       ]);
 
       if (!transResult.error && transResult.data) {
-        // Calculate totals
+        // Calculate totals from today's transactions only
         const totalPemasukan = transResult.data
           .filter(t => t.jenis === "Debet")
           .reduce((sum, t) => sum + Number(t.nominal), 0);
@@ -94,8 +97,8 @@ const Dashboard = () => {
         setPengeluaran(totalPengeluaran);
         setSaldo(totalPemasukan - totalPengeluaran);
         
-        // Get 3 most recent transactions
-        setRecentTransactions(transResult.data.slice(0, 3));
+        // Get 5 most recent transactions
+        setRecentTransactions(transResult.data.slice(0, 5));
       }
 
       if (!invoiceResult.error && invoiceResult.data) {

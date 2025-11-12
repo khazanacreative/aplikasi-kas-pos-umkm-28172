@@ -5,8 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Calendar, Plus, History, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import Header from "@/components/Header";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -41,7 +47,9 @@ const Transactions = () => {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [filterDate, setFilterDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [filterDate, setFilterDate] = useState<Date>(new Date());
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
   const [formData, setFormData] = useState({
     tanggal: new Date().toISOString().split('T')[0],
     keterangan: "",
@@ -109,11 +117,13 @@ const Transactions = () => {
   };
 
   const fetchTransactions = async () => {
+    const filterDateStr = format(filterDate, 'yyyy-MM-dd');
+    
     let query = supabase
       .from("transaksi")
       .select("*")
       .eq("user_id", user?.id)
-      .eq("tanggal", filterDate)
+      .eq("tanggal", filterDateStr)
       .order("created_at", { ascending: false });
 
     if (userRole?.branch_id) {
@@ -128,6 +138,7 @@ const Transactions = () => {
     }
 
     setTransactions(data || []);
+    setCurrentPage(1);
   };
 
   const handleDeleteTransaction = async (id: string) => {
@@ -208,7 +219,7 @@ const Transactions = () => {
       });
     }
 
-    setFilterDate(formData.tanggal);
+    setFilterDate(new Date(formData.tanggal));
     setFormData({
       tanggal: new Date().toISOString().split('T')[0],
       keterangan: "",
@@ -432,26 +443,43 @@ const Transactions = () => {
               </div>
 
               <div className="space-y-2 mb-6">
-                <Label htmlFor="filterDate" className="flex items-center gap-2">
+                <Label className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
                   Filter Tanggal
                 </Label>
-                <Input
-                  id="filterDate"
-                  type="date"
-                  value={filterDate}
-                  onChange={(e) => setFilterDate(e.target.value)}
-                  className="w-full"
-                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !filterDate && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {filterDate ? format(filterDate, "PPP") : <span>Pilih tanggal</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={filterDate}
+                      onSelect={(date) => date && setFilterDate(date)}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {transactions.length === 0 ? (
                 <div className="p-8 text-center text-muted-foreground">
-                  <p>Tidak ada transaksi pada tanggal {new Date(filterDate).toLocaleDateString('id-ID')}</p>
+                  <p>Tidak ada transaksi pada tanggal {format(filterDate, "dd MMMM yyyy", { locale: id })}</p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {transactions.map((transaction) => (
+                <>
+                  <div className="space-y-4">
+                    {transactions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((transaction) => (
                     <Card 
                       key={transaction.id} 
                       className="p-4 hover:shadow-md transition-shadow cursor-pointer"
@@ -492,7 +520,38 @@ const Transactions = () => {
                       </div>
                     </Card>
                   ))}
-                </div>
+                  </div>
+                  
+                  {transactions.length > itemsPerPage && (
+                    <Pagination className="mt-6">
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                        {Array.from({ length: Math.ceil(transactions.length / itemsPerPage) }, (_, i) => i + 1).map(page => (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              onClick={() => setCurrentPage(page)}
+                              isActive={currentPage === page}
+                              className="cursor-pointer"
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        ))}
+                        <PaginationItem>
+                          <PaginationNext 
+                            onClick={() => setCurrentPage(p => Math.min(Math.ceil(transactions.length / itemsPerPage), p + 1))}
+                            className={currentPage === Math.ceil(transactions.length / itemsPerPage) ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  )}
+                </>
               )}
             </Card>
           </TabsContent>
