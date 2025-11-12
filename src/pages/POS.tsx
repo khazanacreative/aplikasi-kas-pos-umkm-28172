@@ -771,14 +771,6 @@ const POS = () => {
                                   <Button
                                     size="icon"
                                     variant="outline"
-                                    onClick={() => openAddStockDialog(product)}
-                                    title="Tambah Stok"
-                                  >
-                                    <PlusCircle className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    size="icon"
-                                    variant="outline"
                                     onClick={() => openEditDialog(product)}
                                     title="Edit Produk"
                                   >

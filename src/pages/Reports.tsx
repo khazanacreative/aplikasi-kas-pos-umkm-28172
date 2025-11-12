@@ -92,8 +92,8 @@ const Reports = () => {
   
   const selisih = totalPemasukan - totalPengeluaran;
 
-  // Group by day for daily chart
-  const dailyData = transactions.reduce((acc: any[], t) => {
+  // Group by day for weekly view (last 7 days)
+  const weeklyData = transactions.reduce((acc: any[], t) => {
     const date = new Date(t.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
     const existing = acc.find(m => m.periode === date);
     
@@ -110,11 +110,11 @@ const Reports = () => {
     return acc;
   }, []).slice(-7);
 
-  // Group by week
-  const weeklyData = transactions.reduce((acc: any[], t) => {
+  // Group by week for monthly view (last 4-5 weeks)
+  const monthlyData = transactions.reduce((acc: any[], t) => {
     const date = new Date(t.tanggal);
     const weekStart = new Date(date.setDate(date.getDate() - date.getDay()));
-    const weekLabel = weekStart.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+    const weekLabel = `Minggu ${weekStart.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}`;
     const existing = acc.find(m => m.periode === weekLabel);
     
     if (existing) {
@@ -128,10 +128,10 @@ const Reports = () => {
       });
     }
     return acc;
-  }, []);
+  }, []).slice(-5);
 
-  // Group by month
-  const monthlyData = transactions.reduce((acc: any[], t) => {
+  // Group by month for yearly view (last 12 months)
+  const yearlyData = transactions.reduce((acc: any[], t) => {
     const month = new Date(t.tanggal).toLocaleString('id-ID', { month: 'short', year: 'numeric' });
     const existing = acc.find(m => m.periode === month);
     
@@ -146,25 +146,7 @@ const Reports = () => {
       });
     }
     return acc;
-  }, []);
-
-  // Group by year
-  const yearlyData = transactions.reduce((acc: any[], t) => {
-    const year = new Date(t.tanggal).getFullYear().toString();
-    const existing = acc.find(m => m.periode === year);
-    
-    if (existing) {
-      if (t.jenis === "Debet") existing.pemasukan += Number(t.nominal);
-      if (t.jenis === "Kredit") existing.pengeluaran += Number(t.nominal);
-    } else {
-      acc.push({
-        periode: year,
-        pemasukan: t.jenis === "Debet" ? Number(t.nominal) : 0,
-        pengeluaran: t.jenis === "Kredit" ? Number(t.nominal) : 0,
-      });
-    }
-    return acc;
-  }, []);
+  }, []).slice(-12);
 
   const getFilteredData = () => {
     switch (periodFilter) {
@@ -333,29 +315,6 @@ const Reports = () => {
             </h3>
           </Card>
         </div>
-
-        {/* Daily Bar Chart */}
-        <Card className="p-5 shadow-lg mb-6">
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary" />
-            Grafik Harian (7 Hari Terakhir)
-          </h3>
-          
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={dailyData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="periode" />
-              <YAxis />
-              <Tooltip 
-                formatter={(value: number) => formatCurrency(value)}
-                contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
-              />
-              <Legend />
-              <Bar dataKey="pemasukan" fill="hsl(var(--success))" name="Pemasukan" />
-              <Bar dataKey="pengeluaran" fill="hsl(var(--destructive))" name="Pengeluaran" />
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
 
         {/* Filtered Bar Chart */}
         <Card className="p-5 shadow-lg mb-6">
